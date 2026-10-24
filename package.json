@@ -1,0 +1,29 @@
+{
+  "name": "slauth",
+  "version": "0.1.0",
+  "description": "One sign-in for a small suite of Cloudflare Workers apps: Cloudflare Access for who you are, plus a per-app PIN lock that asks again as often as you choose.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.js"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.3"
+  }
+}
