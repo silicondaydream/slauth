@@ -1,7 +1,7 @@
 {
   "name": "slauth",
-  "version": "0.1.0",
-  "description": "One sign-in for a small suite of Cloudflare Workers apps: Cloudflare Access for who you are, plus a per-app PIN lock that asks again as often as you choose.",
+  "version": "1.0.0",
+  "description": "Auth for side projects: email codes and passkeys, your own database, zero dependencies. Runs on Workers, Bun, Deno and Node.",
   "license": "MIT",
   "type": "module",
   "main": "./src/index.js",
@@ -10,6 +10,46 @@
     ".": {
       "types": "./src/index.d.ts",
       "default": "./src/index.js"
+    },
+    "./client": {
+      "types": "./src/client.d.ts",
+      "default": "./src/client.js"
+    },
+    "./element": {
+      "types": "./src/element.d.ts",
+      "default": "./src/element.js"
+    },
+    "./node": {
+      "types": "./src/node.d.ts",
+      "default": "./src/node.js"
+    },
+    "./stores/memory": {
+      "types": "./src/stores/memory.d.ts",
+      "default": "./src/stores/memory.js"
+    },
+    "./stores/d1": {
+      "types": "./src/stores/d1.d.ts",
+      "default": "./src/stores/d1.js"
+    },
+    "./stores/kv": {
+      "types": "./src/stores/kv.d.ts",
+      "default": "./src/stores/kv.js"
+    },
+    "./stores/sqlite": {
+      "types": "./src/stores/sqlite.d.ts",
+      "default": "./src/stores/sqlite.js"
+    },
+    "./email/console": {
+      "types": "./src/email/console.d.ts",
+      "default": "./src/email/console.js"
+    },
+    "./email/resend": {
+      "types": "./src/email/resend.d.ts",
+      "default": "./src/email/resend.js"
+    },
+    "./email/cloudflare": {
+      "types": "./src/email/cloudflare.d.ts",
+      "default": "./src/email/cloudflare.js"
     }
   },
   "files": [
@@ -21,9 +61,30 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepublishOnly": "vitest run && tsc -p tsconfig.json"
   },
   "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3",
     "vitest": "^5.0.3"
+  },
+  "keywords": [
+    "auth",
+    "authentication",
+    "passkeys",
+    "webauthn",
+    "magic-code",
+    "cloudflare-workers",
+    "d1",
+    "bun",
+    "deno",
+    "side-project"
+  ],
+  "homepage": "https://slauth.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/silicondaydream/slauth.git"
   }
 }

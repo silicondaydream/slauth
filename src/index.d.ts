@@ -1,3 +1,72 @@
+/** A key-value store: the only thing slauth needs from your database. */
+export interface Store {
+  get(key: string): Promise<any>
+  /** ttl is in seconds. */
+  put(key: string, value: unknown, options?: { ttl?: number }): Promise<void>
+  delete(key: string): Promise<void>
+}
+
+/** Sends the sign-in email. `subject`, `text` and `html` are ready to use. */
+export interface EmailSender {
+  send(message: { to: string; code: string; appName: string; subject: string; text: string; html: string }): Promise<void>
+}
+
+export interface SlauthUser {
+  id: string
+  email: string
+  createdAt: number
+}
+
+export interface SlauthConfig {
+  /** A random string of 16+ characters. Make one with: openssl rand -base64 32 */
+  secret: string
+  /** Where users, sessions and passkeys live: memory(), d1(env.DB), kv(env.KV), sqlite(db), or your own. */
+  store: Store
+  /** How codes are emailed. Defaults to printing them to the console. */
+  email?: EmailSender
+  /** Shown in emails and as the passkey's site name. */
+  appName?: string
+  /** Who may sign in: a list of emails ("@family.com" for a whole domain) or a function. Everyone, if left out. */
+  allow?: string[] | ((email: string) => boolean | Promise<boolean>)
+  /** Where the routes live. Default "/auth". */
+  basePath?: string
+  /** Session cookie name. Default "slauth_session". */
+  cookie?: string
+  /** Sessions last this many days after the last visit. Default 30. */
+  sessionDays?: number
+  /** Origins allowed to post to the routes (and to use passkeys). Default: the request's own origin. */
+  origins?: string | string[]
+  /** Passkey settings, or false to turn passkeys off. */
+  passkeys?:
+    | false
+    | {
+        /** The site passkeys belong to, e.g. "myapp.dev" (works for every subdomain). Default: the request's hostname. */
+        rpId?: string
+        rpName?: string
+        origin?: string | string[]
+        userVerification?: 'required' | 'preferred' | 'discouraged'
+      }
+  /** Also accept people signed in by Cloudflare Access. */
+  access?: { team: string; aud: string | string[]; devUser?: string; fetch?: typeof fetch }
+  /** Turn on the PIN app lock. true = off by default for each person; or set their default. */
+  lock?: true | { default?: Policy; cookie?: string }
+}
+
+export interface Slauth {
+  /** Answers every request under basePath (404 for anything else). */
+  handle(request: Request): Promise<Response>
+  /** The signed-in person, or null. Ignores the app lock. */
+  user(request: Request): Promise<SlauthUser | null>
+  /** The signed-in, unlocked person, or a 401 Response to return as it is. */
+  requireUser(request: Request): Promise<SlauthUser | Response>
+  store: Store
+}
+
+export function slauth(config: SlauthConfig): Slauth
+export function memory(): Store
+export function consoleEmail(): EmailSender
+
+/** What createAccess and createLock work with. */
 export interface User {
   /** Lower-cased email from the Access sign-in. */
   email: string
