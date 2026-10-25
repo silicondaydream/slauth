@@ -10,7 +10,8 @@ import { createClient } from './client.js'
  *     --slauth-radius: 14px;     --slauth-font: inherit;
  *   }
  *
- * Attributes: base-path (default /auth), app-name, redirect (where to go once signed in).
+ * Attributes: base-path (default /auth), app-name, redirect (where to go once signed in),
+ * no-passkeys (email codes only).
  * Fires `slauth:signed-in` with `{ detail: { user } }`.
  *
  *   import 'slauth/element'
@@ -72,7 +73,7 @@ class SlauthSignIn extends HTMLElement {
 
   render() {
     const { step, email, error, busy } = this.state
-    const passkeys = this.auth.passkey.supported()
+    const passkeys = !this.hasAttribute('no-passkeys') && this.auth.passkey.supported()
     const name = this.appName ? ` to ${escape(this.appName)}` : ''
     const views = {
       email: `

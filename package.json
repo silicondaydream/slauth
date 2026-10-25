@@ -56,7 +56,9 @@
     "src",
     "!src/**/*.test.js"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/element.js"
+  ],
   "engines": {
     "node": ">=20"
   },

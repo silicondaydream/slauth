@@ -1,0 +1,82 @@
+---
+import Sloth from '../components/Sloth.astro'
+import '../styles/site.css'
+
+interface Props {
+  title: string
+  description: string
+}
+const { title, description } = Astro.props
+const path = Astro.url.pathname.replace(/\/$/, '') || '/'
+const nav = [
+  { href: '/docs/', label: 'Docs' },
+  { href: '/compare', label: 'Compare' },
+  { href: '/pricing', label: 'Pricing' },
+  { href: 'https://github.com/silicondaydream/slauth', label: 'GitHub' },
+]
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;600&display=swap"
+    />
+    <script is:inline>
+      try {
+        const saved = localStorage.getItem('slauth-theme')
+        if (saved) document.documentElement.dataset.theme = saved
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/"><Sloth size={38} />slauth</a>
+        <nav class="nav" aria-label="Main">
+          {nav.map((n) => <a href={n.href} aria-current={path === n.href.replace(/\/$/, '') ? 'page' : undefined}>{n.label}</a>)}
+        </nav>
+        <button class="theme-toggle" type="button" aria-label="Switch light or dark" id="theme-toggle">🌓</button>
+      </div>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <div>
+          <strong>slauth</strong> <span class="muted">· MIT licensed · made slowly, on purpose 🦥</span>
+        </div>
+        <nav aria-label="Footer">
+          <a href="/docs/">Docs</a>
+          <a href="/docs/quickstart/">Quickstart</a>
+          <a href="/compare">Compare</a>
+          <a href="/pricing">Pricing</a>
+          <a href="https://github.com/silicondaydream/slauth">GitHub</a>
+        </nav>
+      </div>
+    </footer>
+    <script>
+      const button = document.getElementById('theme-toggle')
+      button?.addEventListener('click', () => {
+        const root = document.documentElement
+        const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+        root.dataset.theme = dark ? 'light' : 'dark'
+        try {
+          localStorage.setItem('slauth-theme', root.dataset.theme)
+          // Starlight reads the same choice from its own key.
+          localStorage.setItem('starlight-theme', root.dataset.theme)
+        } catch {}
+      })
+    </script>
+  </body>
+</html>

@@ -98,6 +98,16 @@ describe('allow list', () => {
     expect((await signIn(browser(), mailbox, 'sis@family.com')).status).toBe(200)
   })
 
+  it('taking someone off the list signs them out', async () => {
+    const list = ['me@example.com']
+    const { mailbox, browser } = setup({ allow: (email) => list.includes(email) })
+    const b = browser()
+    await signIn(b, mailbox, 'me@example.com')
+    expect(await b.user()).not.toBeNull()
+    list.pop()
+    expect(await b.user()).toBeNull()
+  })
+
   it('takes a function', async () => {
     const { mailbox, browser } = setup({ allow: async (email) => email.endsWith('@ok.dev') })
     expect((await browser().call('POST', '/auth/email/start', { email: 'a@no.dev' })).status).toBe(403)

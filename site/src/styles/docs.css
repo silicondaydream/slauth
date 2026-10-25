@@ -1,0 +1,34 @@
+/* Starlight, dressed in slauth's colours. */
+:root {
+  --sl-font: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --sl-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --sl-color-accent-low: #3a2a12;
+  --sl-color-accent: #f59e0b;
+  --sl-color-accent-high: #fcd38a;
+  --sl-color-white: #f5ead9;
+  --sl-color-gray-1: #eadcc6;
+  --sl-color-gray-2: #cdbba3;
+  --sl-color-gray-3: #a38f77;
+  --sl-color-gray-4: #6b5d50;
+  --sl-color-gray-5: #3d3128;
+  --sl-color-gray-6: #2a2119;
+  --sl-color-black: #1b1611;
+}
+:root[data-theme='light'] {
+  --sl-color-accent-low: #fde7bf;
+  --sl-color-accent: #b45309;
+  --sl-color-accent-high: #6b3a06;
+  --sl-color-white: #2b2118;
+  --sl-color-gray-1: #3d3128;
+  --sl-color-gray-2: #574a3e;
+  --sl-color-gray-3: #7a6b5c;
+  --sl-color-gray-4: #a8977f;
+  --sl-color-gray-5: #e3d5bf;
+  --sl-color-gray-6: #f6ead6;
+  --sl-color-gray-7: #faf1e3;
+  --sl-color-black: #fdf6ec;
+}
+.site-title { font-weight: 800; letter-spacing: -0.02em; }
+.sl-markdown-content h1, .sl-markdown-content h2 { letter-spacing: -0.02em; }
+.sl-markdown-content :is(h2, h3) { font-weight: 750; }
+.expressive-code .frame { border-radius: 12px; }

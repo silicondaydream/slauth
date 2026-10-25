@@ -64,7 +64,8 @@ export function slauth(config) {
     const session = await sessions.read(request)
     if (session) {
       const found = await users.byId(session.userId)
-      if (found) return publicUser(found)
+      // Taking someone off the allow list signs them out everywhere.
+      if (found && (await users.allowed(found.email))) return publicUser(found)
     }
     if (access) {
       const fromAccess = await access.getUser(request)
