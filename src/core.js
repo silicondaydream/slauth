@@ -9,6 +9,7 @@ import { base64Url, json } from './util.js'
 
 const CHALLENGE_SECONDS = 5 * 60
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+let warned = false
 
 /**
  * slauth: sign-in for side projects.
@@ -40,7 +41,10 @@ export function slauth(config) {
   }
 
   const sender = config.email ?? consoleEmail()
-  if (!config.email) console.warn('slauth: no `email` sender set, so sign-in codes are printed to the console.')
+  if (!config.email && !warned) {
+    warned = true
+    console.warn('slauth: no `email` sender set, so sign-in codes are printed to the console.')
+  }
 
   const users = createUsers(store, allow)
   const sessions = createSessions({ store, cookie, days: sessionDays })

@@ -1,0 +1,4 @@
+public/slauth/
+node_modules/
+.wrangler/
+.dev.vars

@@ -1,0 +1,15 @@
+{
+  "name": "slauth-example",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    // The auth and API routes go to the Worker; everything else is a file.
+    "run_worker_first": ["/auth/*", "/api/*"]
+  },
+  // `wrangler deploy` creates the database on the first deploy.
+  "d1_databases": [{ "binding": "DB", "database_name": "slauth-example" }]
+  // Then: `wrangler secret put SLAUTH_SECRET` (any long random string, e.g. openssl rand -base64 32).
+  // For real emails: `wrangler secret put RESEND_API_KEY` and set EMAIL_FROM below as a var.
+}

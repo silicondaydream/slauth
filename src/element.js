@@ -62,6 +62,9 @@ class SlauthSignIn extends HTMLElement {
   }
 
   done(user) {
+    // Back to the start, ready for the next time it's shown (e.g. after signing out).
+    this.state = { step: 'email', email: '', error: '', busy: false }
+    this.render()
     this.dispatchEvent(new CustomEvent('slauth:signed-in', { detail: { user }, bubbles: true, composed: true }))
     const to = this.getAttribute('redirect')
     if (to) window.location.assign(to)
@@ -105,22 +108,25 @@ class SlauthSignIn extends HTMLElement {
         handler()
       })
     }
-    on('email', () =>
-      this.run(async () => {
-        const value = this.shadowRoot.getElementById('email').value.trim()
+    // Read inputs before run(): it re-renders the form, which would empty them.
+    on('email', () => {
+      const value = this.shadowRoot.getElementById('email').value.trim()
+      this.set({ email: value })
+      return this.run(async () => {
         await this.auth.email.start(value)
-        this.set({ step: 'code', email: value })
+        this.set({ step: 'code' })
         this.shadowRoot.getElementById('code')?.focus()
-      }),
-    )
-    on('code', () =>
-      this.run(async () => {
-        const { user } = await this.auth.email.verify(email, this.shadowRoot.getElementById('code').value)
+      })
+    })
+    on('code', () => {
+      const code = this.shadowRoot.getElementById('code').value
+      return this.run(async () => {
+        const { user } = await this.auth.email.verify(email, code)
         this.user = user
         if (passkeys) this.set({ step: 'offer' })
         else this.done(user)
-      }),
-    )
+      })
+    })
     on('passkey', () => this.run(async () => this.done((await this.auth.passkey.signIn()).user)))
     on('back', () => this.set({ step: 'email', error: '' }))
     on('resend', () => this.run(() => this.auth.email.start(email)))
