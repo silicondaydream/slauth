@@ -67,3 +67,40 @@ export function concat(...parts) {
   }
   return out
 }
+
+/** A random, URL-safe id with a readable prefix, e.g. id('usr') → "usr_k3J…". */
+export function randomId(prefix, bytes = 15) {
+  return `${prefix}_${base64Url(crypto.getRandomValues(new Uint8Array(bytes)))}`
+}
+
+/** A 302 to `location`, with any Set-Cookie values. */
+export function redirect(location, cookies = []) {
+  const headers = new Headers({ Location: location, 'Cache-Control': 'no-store' })
+  for (const c of cookies) headers.append('Set-Cookie', c)
+  return new Response(null, { status: 302, headers })
+}
+
+/**
+ * Only paths on this site ("/dashboard?tab=1"), never "//evil.example" or
+ * "https://evil.example", so a sign-in link can't send someone elsewhere.
+ */
+export function safeRedirect(path, fallback = '/') {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//') || path.startsWith('/\\') || /[\r\n]/.test(path)) return fallback
+  return path
+}
+
+/** Adds query parameters to a same-site path. */
+export function withParams(path, params) {
+  const url = new URL(path, 'http://x')
+  for (const [key, value] of Object.entries(params)) if (value != null) url.searchParams.set(key, value)
+  return url.pathname + url.search + url.hash
+}
+
+/** The visitor's IP from the headers hosts set for it, or null when there's none we can trust. */
+export function clientIp(request) {
+  return request.headers.get('cf-connecting-ip') ?? request.headers.get('fly-client-ip') ?? request.headers.get('x-real-ip') ?? null
+}
+
+export function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+}

@@ -2,21 +2,38 @@ import { createAccess } from './access.js'
 import { createEmailCodes } from './email-code.js'
 import { consoleEmail } from './email/console.js'
 import { createLock } from './lock.js'
-import { PasskeyError, readChallenge, verifyAuthentication, verifyRegistration } from './passkey/webauthn.js'
+import { createOAuthFlow } from './oauth/flow.js'
+import { createOrgs, OrgError } from './orgs.js'
+import { PasskeyError } from './passkey/webauthn.js'
+import { createPasswords } from './password.js'
+import { createRateLimit } from './rate-limit.js'
+import { accountRoutes } from './routes/account.js'
+import { emailRoutes } from './routes/email.js'
+import { oauthRoutes } from './routes/oauth.js'
+import { orgRoutes } from './routes/orgs.js'
+import { passkeyRoutes } from './routes/passkeys.js'
+import { passwordRoutes } from './routes/password.js'
+import { twoFactorRoutes } from './routes/two-factor.js'
 import { createSessions } from './session.js'
-import { createUsers, normalizeEmail, validEmail } from './users.js'
-import { base64Url, json } from './util.js'
+import { createTokens } from './tokens.js'
+import { createTwoFactor } from './two-factor.js'
+import { createUsers, publicUser } from './users.js'
+import { base64Url, json, randomToken, readCookie, serializeCookie, sha256 } from './util.js'
 
-const CHALLENGE_SECONDS = 5 * 60
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+const PENDING_SECONDS = 10 * 60
+const PENDING_COOKIE = 'slauth_2fa'
 let warned = false
 
 /**
- * slauth: sign-in for side projects.
+ * slauth: sign-in for side projects, and for the projects they grow into.
  *
  *   const auth = slauth({ secret, store })
  *   if (url.pathname.startsWith('/auth/')) return auth.handle(request)
  *   const user = await auth.user(request)
+ *
+ * Email codes and passkeys are on from the start. Everything else (providers,
+ * passwords, two-factor, tokens, organizations) is one config key away.
  *
  * @param {import('./index.js').SlauthConfig} config
  */
@@ -31,6 +48,12 @@ export function slauth(config) {
     allow,
     passkeys = {},
     origins,
+    baseUrl,
+    signInPage,
+    freshMinutes = 15,
+    providers = [],
+    magicLinks = false,
+    on = {},
   } = config ?? {}
 
   if (!store || typeof store.get !== 'function') {
@@ -46,9 +69,27 @@ export function slauth(config) {
     console.warn('slauth: no `email` sender set, so sign-in codes are printed to the console.')
   }
 
+  const ids = new Set()
+  for (const p of providers) {
+    if (ids.has(p.id)) throw new Error(`slauth: two providers are called "${p.id}".`)
+    ids.add(p.id)
+  }
+
+  const option = (value, defaults = {}) => (value ? (value === true ? defaults : { ...defaults, ...value }) : null)
+  const passwordOptions = option(config.passwords)
+  const twoFactorOptions = option(config.twoFactor)
+  const tokenOptions = option(config.tokens)
+  const orgOptions = option(config.organizations, { allowCreate: true })
+
   const users = createUsers(store, allow)
   const sessions = createSessions({ store, cookie, days: sessionDays })
-  const codes = createEmailCodes({ store, secret, sender, appName })
+  const codes = createEmailCodes({ store, secret, sender, appName, message: config.emails })
+  const limits = createRateLimit(store, config.rateLimit)
+  const passwords = passwordOptions ? createPasswords({ store, ...passwordOptions }) : null
+  const twoFactor = twoFactorOptions ? createTwoFactor({ store, issuer: twoFactorOptions.issuer ?? appName }) : null
+  const tokens = tokenOptions ? createTokens({ store, secret, ...tokenOptions }) : null
+  const orgs = orgOptions ? createOrgs(store) : null
+  const oauth = createOAuthFlow({ store, fetch: config.fetch })
   const access = config.access ? createAccess({ teamDomain: config.access.team, audience: config.access.aud, devUser: config.access.devUser, fetch: config.access.fetch }) : null
   const lock = config.lock
     ? createLock(
@@ -59,38 +100,150 @@ export function slauth(config) {
 
   const prefix = basePath.replace(/\/+$/, '')
 
-  /** The signed-in person, or null. Doesn't look at the app lock; see requireUser. */
-  async function user(request) {
+  /* ---------- who's asking ---------- */
+
+  /** The session and user behind a request, or null. */
+  async function current(request) {
     const session = await sessions.read(request)
     if (session) {
       const found = await users.byId(session.userId)
-      // Taking someone off the allow list signs them out everywhere.
-      if (found && (await users.allowed(found.email))) return publicUser(found)
+      // Taking someone off the allow list (or banning them) signs them out everywhere.
+      if (found && !found.bannedAt && (await users.allowed(found.email, { method: 'session' }))) return { user: found, session }
+    }
+    const bearer = request.headers.get('authorization')
+    if (tokens && bearer?.startsWith('Bearer ') && bearer.split('.').length === 3) {
+      const claims = await tokens.verify(bearer.slice(7).trim())
+      const found = claims && (await users.byId(claims.sub))
+      if (found && !found.bannedAt) return { user: found, session: null, claims }
     }
     if (access) {
       const fromAccess = await access.getUser(request)
       if (fromAccess) {
-        const found = await users.signIn(fromAccess.email)
-        if (found) return publicUser(found)
+        const found = await users.signIn(fromAccess.email, { method: 'access' })
+        if (found && !found.bannedAt) return { user: found, session: null }
       }
     }
     return null
   }
 
+  /** The signed-in person, or null. Doesn't look at the app lock; see requireUser. */
+  async function user(request) {
+    const found = await current(request)
+    return found ? publicUser(found.user) : null
+  }
+
   /**
-   * The signed-in, unlocked person, or a 401 Response to send back as it is:
+   * The signed-in, unlocked person, or a 401/403 Response to send back as it is:
    *
    *   const user = await auth.requireUser(request)
    *   if (user instanceof Response) return user
+   *
+   * @param {Request} request
+   * @param {{ role?: string | string[] }} [options]  only people with one of these roles
    */
-  async function requireUser(request) {
+  async function requireUser(request, { role } = {}) {
     const found = await user(request)
     if (!found) return json({ error: 'Please sign in.', code: 'signed-out' }, 401)
     if (lock && !(await lock.isUnlocked(lockUser(found), request.headers.get('cookie')))) {
       return json({ error: 'Please enter your PIN.', code: 'locked' }, 401)
     }
+    if (role && ![role].flat().some((r) => found.roles.includes(r))) return json({ error: "You don't have access to that.", code: 'forbidden' }, 403)
     return found
   }
+
+  /* ---------- the end of every sign-in ---------- */
+
+  async function emit(name, data) {
+    if (typeof on[name] !== 'function') return
+    try {
+      await on[name](data)
+    } catch (error) {
+      console.error(`slauth: the ${name} handler threw:`, error)
+    }
+  }
+
+  /**
+   * Every way of signing in ends here: bans, then two-factor, then a session.
+   * @returns {Promise<{ kind: 'session', user: object, cookie: string, token: string } | { kind: 'two-factor', cookie: string, token: string } | { kind: 'refused', status: number, code: string, error: string }>}
+   */
+  async function complete(found, request, { method }) {
+    if (found.bannedAt) return { kind: 'refused', status: 403, code: 'banned', error: "This account can't sign in." }
+    if (found.isNew) {
+      delete found.isNew
+      await emit('signUp', { user: publicUser(found), method, request })
+    }
+    if (twoFactor && method !== 'passkey' && (await twoFactor.enabled(found.id))) {
+      const token = randomToken()
+      await store.put(`2fa:${base64Url(await sha256(token))}`, { userId: found.id, method, tries: 0 }, { ttl: PENDING_SECONDS })
+      return { kind: 'two-factor', token, cookie: serializeCookie(PENDING_COOKIE, token, { maxAge: PENDING_SECONDS, secure: isSecure(request) }) }
+    }
+    const made = await sessions.create(found.id, request, { method })
+    await emit('signIn', { user: publicUser(found), method, request })
+    return { kind: 'session', user: publicUser(found), cookie: made.cookie, token: made.token }
+  }
+
+  /** The JSON answer for a sign-in route: a cookie for browsers, or the token for apps that asked for one. */
+  function reply(result, extra = {}, request) {
+    if (result.kind === 'refused') return json({ error: result.error, code: result.code }, result.status)
+    const bearer = request?.headers.get('x-slauth-transport') === 'bearer'
+    if (result.kind === 'two-factor') return json({ twoFactor: true, ...(bearer ? { pendingToken: result.token } : {}), ...extra }, 200, bearer ? {} : { 'Set-Cookie': result.cookie })
+    return json({ user: result.user, ...(bearer ? { token: result.token } : {}), ...extra }, 200, bearer ? {} : { 'Set-Cookie': result.cookie })
+  }
+
+  /** The two-factor sign-in waiting to be finished in this browser (or for this token). */
+  async function pending(request, token) {
+    const value = token ?? readCookie(request.headers.get('cookie'), PENDING_COOKIE)
+    if (!value || value.length > 128) return null
+    const key = `2fa:${base64Url(await sha256(value))}`
+    const doc = await store.get(key)
+    return doc ? { ...doc, key } : null
+  }
+
+  /* ---------- routes ---------- */
+
+  const app = {
+    config,
+    appName,
+    prefix,
+    store,
+    users,
+    sessions,
+    codes,
+    limits,
+    passwords,
+    twoFactor,
+    tokens,
+    orgs,
+    orgOptions,
+    oauth,
+    lock,
+    providers,
+    magicLinks,
+    signInPage,
+    passkeys,
+    origins,
+    current,
+    complete,
+    reply,
+    pending,
+    emit,
+    deleteUser,
+    pendingCookie: PENDING_COOKIE,
+    /** Where links in emails and provider callbacks point. */
+    origin: (url) => (baseUrl ?? url.origin).replace(/\/+$/, ''),
+    /** The signed-in user and session, or a 401 to return. */
+    async signedIn(request) {
+      return (await current(request)) ?? json({ error: 'Please sign in.', code: 'signed-out' }, 401)
+    },
+    /** True when the session started recently enough for something sensitive. */
+    fresh(session) {
+      return freshMinutes === false || (session != null && Date.now() - session.createdAt < freshMinutes * 60_000)
+    },
+    reauth: () => json({ error: 'Please sign in again to do that.', code: 'reauth-required' }, 403),
+    secure: isSecure,
+  }
+
+  const routers = [emailRoutes(app), accountRoutes(app), passkeyRoutes(app), oauthRoutes(app), passwordRoutes(app), twoFactorRoutes(app), orgRoutes(app)]
 
   /** Every route under basePath. Returns a 404 for anything else, so it's safe to call for any request. */
   async function handle(request) {
@@ -104,195 +257,170 @@ export function slauth(config) {
       if (refused) return refused
     }
 
+    let parsed
+    const body = async () => {
+      if (parsed === undefined) {
+        try {
+          parsed = (await request.json()) ?? {}
+        } catch {
+          parsed = {}
+        }
+        if (typeof parsed !== 'object' || Array.isArray(parsed)) parsed = {}
+      }
+      return parsed
+    }
+    const r = { route, method, request, url, body }
+
     try {
-      return await routeRequest(route, method, request, url)
+      for (const router of routers) {
+        const answer = await router(r)
+        if (answer) return answer
+      }
+      if (route.startsWith('lock/') && lock) {
+        const found = await user(request)
+        if (!found) return json({ error: 'Please sign in.', code: 'signed-out' }, 401)
+        const answer = await lock.handle(route.slice(5), method, body, lockUser(found), request.headers.get('cookie'), url.protocol === 'https:')
+        if (answer) return json(answer.body, answer.status, answer.cookie ? { 'Set-Cookie': answer.cookie } : {})
+      }
+      return json({ error: 'Not found.', code: 'not-found' }, 404)
     } catch (error) {
       if (error instanceof PasskeyError) return json({ error: error.message, code: 'passkey-failed' }, 400)
+      if (error instanceof OrgError) return json({ error: error.message, code: error.code }, 409)
       console.error('slauth:', error)
       return json({ error: 'Something went wrong.', code: 'server-error' }, 500)
     }
   }
 
-  async function routeRequest(route, method, request, url) {
-    const body = async () => {
-      try {
-        return (await request.json()) ?? {}
-      } catch {
-        return {}
-      }
-    }
+  /* ---------- the server-side API ---------- */
 
-    if (route === 'session' && method === 'GET') {
-      const session = await sessions.read(request)
-      const found = await user(request)
-      const headers = {}
-      if (session && found) {
-        const refreshed = await sessions.refresh(session, request)
-        if (refreshed) headers['Set-Cookie'] = refreshed
-      }
-      const out = { user: found }
-      if (lock && found) out.lock = (await lock.handle('session', 'GET', body, lockUser(found), request.headers.get('cookie'), url.protocol === 'https:')).body
-      return json(out, 200, headers)
-    }
-
-    if (route === 'email/start' && method === 'POST') {
-      const email = normalizeEmail((await body()).email)
-      if (!validEmail(email)) return json({ error: "That doesn't look like an email address.", code: 'bad-email' }, 400)
-      if (!(await users.allowed(email))) return json({ error: "That email isn't on the list for this app.", code: 'not-allowed' }, 403)
-      const sent = await codes.start(email)
-      if (!sent.ok) return json({ error: `Please wait ${sent.retryAfter}s before asking for another code.`, code: sent.code, retryAfter: sent.retryAfter }, 429)
-      return json({ ok: true })
-    }
-
-    if (route === 'email/verify' && method === 'POST') {
-      const input = await body()
-      const email = normalizeEmail(input.email)
-      if (!validEmail(email)) return json({ error: "That doesn't look like an email address.", code: 'bad-email' }, 400)
-      const result = await codes.verify(email, input.code)
-      if (!result.ok) {
-        const messages = { expired: 'That code has expired. Ask for a new one.', 'too-many-tries': 'Too many tries. Ask for a new code.', 'bad-code': 'That code is wrong.' }
-        return json({ error: messages[result.code], code: result.code, triesLeft: result.triesLeft }, result.code === 'bad-code' ? 400 : 410)
-      }
-      const found = await users.signIn(email)
-      if (!found) return json({ error: "That email isn't on the list for this app.", code: 'not-allowed' }, 403)
-      return json({ user: publicUser(found) }, 200, { 'Set-Cookie': await sessions.create(found.id, request) })
-    }
-
-    if (route === 'signout' && method === 'POST') {
-      return json({ ok: true }, 200, { 'Set-Cookie': await sessions.destroy(request) })
-    }
-
-    if (route.startsWith('passkey') || route === 'passkeys') {
-      if (passkeys === false) return json({ error: 'Passkeys are turned off.', code: 'not-found' }, 404)
-      return passkeyRoute(route, method, request, url, body)
-    }
-
-    if (route.startsWith('lock/') && lock) {
-      const found = await user(request)
-      if (!found) return json({ error: 'Please sign in.', code: 'signed-out' }, 401)
-      const reply = await lock.handle(route.slice(5), method, body, lockUser(found), request.headers.get('cookie'), url.protocol === 'https:')
-      if (reply) return json(reply.body, reply.status, reply.cookie ? { 'Set-Cookie': reply.cookie } : {})
-    }
-
-    return json({ error: 'Not found.', code: 'not-found' }, 404)
+  async function deleteUser(id) {
+    const found = await users.byId(id)
+    if (!found) return false
+    await sessions.revokeAll(id)
+    for (const pk of (await store.get(`passkeys:${id}`)) ?? []) await store.delete(`passkey:${pk}`)
+    await store.delete(`passkeys:${id}`)
+    for (const key of (await store.get(`accounts:${id}`)) ?? []) await store.delete(`account:${key}`)
+    for (const key of [`accounts:${id}`, `password:${id}`, `totp:${id}`, `lock:${id}`]) await store.delete(key)
+    if (orgs) await orgs.forget(id)
+    await users.remove(found)
+    await emit('userDeleted', { user: publicUser(found) })
+    return true
   }
 
-  /* ---------- passkeys ---------- */
-
-  const expect = (url, challenge) => ({
-    rpId: passkeys.rpId ?? url.hostname,
-    origin: passkeys.origin ?? origins ?? url.origin,
-    challenge,
-    requireUserVerification: passkeys.userVerification === 'required',
-  })
-
-  async function takeChallenge(clientDataJSON, type) {
-    const challenge = readChallenge(clientDataJSON)
-    if (!challenge) throw new PasskeyError('The response has no challenge.')
-    const stored = await store.get(`challenge:${challenge}`)
-    // Single use, whatever happens next.
-    await store.delete(`challenge:${challenge}`)
-    if (!stored || stored.type !== type) throw new PasskeyError('That passkey request expired. Try again.')
-    return { challenge, stored }
+  async function updateUser(id, patch) {
+    const updated = await users.update(id, patch)
+    if (updated) await emit('userUpdated', { user: publicUser(updated) })
+    return updated
   }
 
-  async function newChallenge(value) {
-    const challenge = base64Url(crypto.getRandomValues(new Uint8Array(32)))
-    await store.put(`challenge:${challenge}`, value, { ttl: CHALLENGE_SECONDS })
-    return challenge
+  return {
+    handle,
+    user,
+    requireUser,
+    /** The user and the session behind a request (session is null for Access or a JWT), or null. */
+    async session(request) {
+      const found = await current(request)
+      if (!found) return null
+      const s = found.session
+      return { user: publicUser(found.user), session: s ? { id: s.id, userId: s.userId, createdAt: s.createdAt, method: s.method ?? null, impersonatorId: s.impersonatorId ?? null } : null }
+    },
+    store,
+
+    users: {
+      get: users.byId,
+      byEmail: users.byEmail,
+      list: users.list,
+      async create(details) {
+        const made = await users.create(details)
+        await emit('signUp', { user: publicUser(made), method: 'admin' })
+        return made
+      },
+      update: updateUser,
+      delete: deleteUser,
+      /** Signs them out everywhere and stops them signing in again, until unban. */
+      async ban(id) {
+        const updated = await updateUser(id, { bannedAt: Date.now() })
+        if (updated) await sessions.revokeAll(id)
+        return updated
+      },
+      unban: (id) => updateUser(id, { bannedAt: null }),
+    },
+
+    sessions: {
+      list: sessions.list,
+      revoke: sessions.revoke,
+      revokeAll: (userId) => sessions.revokeAll(userId),
+      /**
+       * Signs someone in without asking them: for your own sign-in methods, tests, or
+       * support staff seeing what a user sees (pass impersonatorId so it's on record).
+       * Returns the Set-Cookie value and the bearer token.
+       */
+      async create(userId, request, { method = 'admin', impersonatorId = null } = {}) {
+        const found = await users.byId(userId)
+        if (!found) throw new Error(`slauth: no user ${userId}.`)
+        const made = await sessions.create(userId, request, { method, impersonatorId })
+        return { cookie: made.cookie, token: made.token }
+      },
+    },
+
+    accounts: {
+      /** The providers someone has linked, with their tokens when the provider has keepTokens. */
+      async list(userId) {
+        const out = []
+        for (const key of (await store.get(`accounts:${userId}`)) ?? []) {
+          const doc = await store.get(`account:${key}`)
+          if (doc) out.push(doc)
+        }
+        return out
+      },
+    },
+
+    passwords: passwords && { set: passwords.set, remove: passwords.remove, has: passwords.has, hash: passwords.hash },
+    twoFactor: twoFactor && { enabled: twoFactor.enabled, disable: twoFactor.disable },
+    orgs: orgs && {
+      create: (details, ownerId) => orgs.create(details, ownerId),
+      get: orgs.get,
+      update: orgs.update,
+      delete: orgs.remove,
+      forUser: orgs.forUser,
+      members: orgs.members,
+      role: orgs.role,
+      addMember: orgs.addMember,
+      setRole: orgs.setRole,
+      removeMember: orgs.removeMember,
+      invite: orgs.invite,
+      revokeInvite: orgs.revokeInvite,
+      /**
+       * The signed-in person if they belong to this org (with one of these roles), else a
+       * 401/403 Response to return as it is.
+       */
+      async require(request, orgId, { role } = {}) {
+        const found = await requireUser(request)
+        if (found instanceof Response) return found
+        const theirs = await orgs.role(orgId, found.id)
+        if (!theirs || (role && ![role].flat().includes(theirs))) return json({ error: "You don't have access to that.", code: 'forbidden' }, 403)
+        return { ...found, orgRole: theirs }
+      },
+    },
+
+    createToken: (u, extra) => {
+      if (!tokens) throw new Error('slauth: turn on `tokens` to make tokens.')
+      return tokens.create(u, extra)
+    },
+    verifyToken: (token) => {
+      if (!tokens) throw new Error('slauth: turn on `tokens` to check tokens.')
+      return tokens.verify(token)
+    },
   }
-
-  async function passkeyRoute(route, method, request, url, body) {
-    if (route === 'passkey/login/options' && method === 'POST') {
-      const challenge = await newChallenge({ type: 'login' })
-      return json({
-        challenge,
-        rpId: passkeys.rpId ?? url.hostname,
-        timeout: CHALLENGE_SECONDS * 1000,
-        userVerification: passkeys.userVerification ?? 'preferred',
-        allowCredentials: [],
-      })
-    }
-
-    if (route === 'passkey/login/verify' && method === 'POST') {
-      const { credential } = await body()
-      await takeChallenge(credential?.response?.clientDataJSON, 'login')
-      const stored = typeof credential?.id === 'string' ? await store.get(`passkey:${credential.id}`) : null
-      if (!stored) return json({ error: "This passkey isn't registered here.", code: 'passkey-unknown' }, 400)
-      if (credential.response.userHandle && credential.response.userHandle !== base64Url(new TextEncoder().encode(stored.userId))) {
-        throw new PasskeyError('This passkey belongs to someone else.')
-      }
-      const { counter } = await verifyAuthentication(credential, stored, expect(url, readChallenge(credential.response.clientDataJSON)))
-      await store.put(`passkey:${stored.id}`, { ...stored, counter, lastUsedAt: Date.now() })
-      const found = await users.byId(stored.userId)
-      if (!found || !(await users.allowed(found.email))) return json({ error: "You're not on the list for this app.", code: 'not-allowed' }, 403)
-      return json({ user: publicUser(found) }, 200, { 'Set-Cookie': await sessions.create(found.id, request) })
-    }
-
-    // Everything below is for someone already signed in.
-    const found = await user(request)
-    if (!found) return json({ error: 'Please sign in.', code: 'signed-out' }, 401)
-    const ids = (await store.get(`passkeys:${found.id}`)) ?? []
-
-    if (route === 'passkey/register/options' && method === 'POST') {
-      const challenge = await newChallenge({ type: 'register', userId: found.id })
-      return json({
-        challenge,
-        rp: { id: passkeys.rpId ?? url.hostname, name: passkeys.rpName ?? appName },
-        user: { id: base64Url(new TextEncoder().encode(found.id)), name: found.email, displayName: found.email },
-        pubKeyCredParams: [
-          { type: 'public-key', alg: -7 },
-          { type: 'public-key', alg: -257 },
-        ],
-        timeout: CHALLENGE_SECONDS * 1000,
-        attestation: 'none',
-        authenticatorSelection: { residentKey: 'required', requireResidentKey: true, userVerification: passkeys.userVerification ?? 'preferred' },
-        excludeCredentials: ids.map((id) => ({ type: 'public-key', id })),
-      })
-    }
-
-    if (route === 'passkey/register/verify' && method === 'POST') {
-      const { credential, name } = await body()
-      const { challenge, stored } = await takeChallenge(credential?.response?.clientDataJSON, 'register')
-      if (stored.userId !== found.id) throw new PasskeyError('That passkey request was for someone else.')
-      const verified = await verifyRegistration(credential, expect(url, challenge))
-      if (await store.get(`passkey:${verified.id}`)) return json({ error: 'That passkey is already registered.', code: 'passkey-exists' }, 409)
-      const label = typeof name === 'string' && name.trim() ? name.trim().slice(0, 60) : `Passkey added ${new Date().toISOString().slice(0, 10)}`
-      await store.put(`passkey:${verified.id}`, { ...verified, userId: found.id, name: label, createdAt: Date.now(), lastUsedAt: null })
-      await store.put(`passkeys:${found.id}`, [...ids, verified.id])
-      return json({ ok: true, passkey: { id: verified.id, name: label } })
-    }
-
-    if (route === 'passkeys' && method === 'GET') {
-      const list = []
-      for (const id of ids) {
-        const pk = await store.get(`passkey:${id}`)
-        if (pk) list.push({ id: pk.id, name: pk.name, createdAt: pk.createdAt, lastUsedAt: pk.lastUsedAt })
-      }
-      return json({ passkeys: list })
-    }
-
-    if (route === 'passkey/delete' && method === 'POST') {
-      const { id } = await body()
-      if (!ids.includes(id)) return json({ error: 'No such passkey.', code: 'passkey-unknown' }, 404)
-      await store.delete(`passkey:${id}`)
-      await store.put(`passkeys:${found.id}`, ids.filter((x) => x !== id))
-      return json({ ok: true })
-    }
-
-    return json({ error: 'Not found.', code: 'not-found' }, 404)
-  }
-
-  return { handle, user, requireUser, store }
-}
-
-function publicUser(user) {
-  return { id: user.id, email: user.email, createdAt: user.createdAt }
 }
 
 /** createLock works with { email, userId }. */
 function lockUser(user) {
   return { email: user.email, userId: user.id }
+}
+
+function isSecure(request) {
+  return new URL(request.url).protocol === 'https:'
 }
 
 /**

@@ -40,5 +40,19 @@ export function d1(db, { table = 'slauth_kv' } = {}) {
       await init()
       await db.prepare(`DELETE FROM ${table} WHERE key = ?`).bind(key).run()
     },
+    async list(prefix, { limit = 100, cursor } = {}) {
+      await init()
+      const { results } = await db
+        .prepare(`SELECT key, value FROM ${table} WHERE key >= ? AND key < ? AND key > ? AND (expires_at IS NULL OR expires_at > ?) ORDER BY key LIMIT ?`)
+        .bind(prefix, prefix + '\uffff', cursor ?? '', Date.now(), limit + 1)
+        .all()
+      return page(results, limit)
+    },
   }
+}
+
+/** Shared by the SQL stores: rows (one more than asked for) → a page and its cursor. */
+export function page(rows, limit) {
+  const items = rows.slice(0, limit).map((row) => ({ key: row.key, value: JSON.parse(row.value) }))
+  return { items, cursor: rows.length > limit ? items.at(-1).key : null }
 }
