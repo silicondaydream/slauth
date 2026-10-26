@@ -1,14 +1,14 @@
 // Not run: type-checked by `pnpm typecheck` to keep the .d.ts files honest.
-import { slauth, memory, createLock, type SlauthUser } from 'slauth'
-import { d1 } from 'slauth/stores/d1'
-import { kv } from 'slauth/stores/kv'
-import { sqlite } from 'slauth/stores/sqlite'
-import { resend } from 'slauth/email/resend'
-import { cloudflareEmail } from 'slauth/email/cloudflare'
-import { consoleEmail } from 'slauth/email/console'
-import { createClient, SlauthError } from 'slauth/client'
-import { toNodeHandler } from 'slauth/node'
-import 'slauth/element'
+import { slauth, memory, createLock, type SlauthUser } from 'slauthjs'
+import { d1 } from 'slauthjs/stores/d1'
+import { kv } from 'slauthjs/stores/kv'
+import { sqlite } from 'slauthjs/stores/sqlite'
+import { resend } from 'slauthjs/email/resend'
+import { cloudflareEmail } from 'slauthjs/email/cloudflare'
+import { consoleEmail } from 'slauthjs/email/console'
+import { createClient, SlauthError } from 'slauthjs/client'
+import { toNodeHandler } from 'slauthjs/node'
+import 'slauthjs/element'
 
 declare const env: { DB: { prepare(sql: string): unknown }; KV: Parameters<typeof kv>[0]; EMAIL: Parameters<typeof cloudflareEmail>[0] }
 declare const db: Parameters<typeof sqlite>[0]

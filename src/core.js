@@ -34,7 +34,7 @@ export function slauth(config) {
   } = config ?? {}
 
   if (!store || typeof store.get !== 'function') {
-    throw new Error("slauth: pass a store, e.g. store: memory() from 'slauth/stores/memory'.")
+    throw new Error("slauth: pass a store, e.g. store: memory() from 'slauthjs/stores/memory'.")
   }
   if (typeof secret !== 'string' || secret.length < 16) {
     throw new Error('slauth: `secret` must be a random string of at least 16 characters. Make one with: openssl rand -base64 32')

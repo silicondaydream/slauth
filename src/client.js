@@ -2,7 +2,7 @@
  * The browser side: tiny helpers around the /auth routes, including the WebAuthn
  * plumbing passkeys need.
  *
- *   import { createClient } from 'slauth/client'
+ *   import { createClient } from 'slauthjs/client'
  *   const auth = createClient()                 // or createClient({ basePath: '/api/auth' })
  *   await auth.email.start('me@example.com')
  *   const { user } = await auth.email.verify('me@example.com', '123456')

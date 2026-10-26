@@ -1,5 +1,5 @@
 {
-  "name": "slauth",
+  "name": "slauthjs",
   "version": "1.0.0",
   "description": "Auth for side projects: email codes and passkeys, your own database, zero dependencies. Runs on Workers, Bun, Deno and Node.",
   "license": "MIT",

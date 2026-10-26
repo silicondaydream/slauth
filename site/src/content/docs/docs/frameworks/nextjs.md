@@ -4,8 +4,8 @@ description: slauth in the Next.js App Router, with route handlers and server co
 ---
 
 ```ts title="lib/auth.ts"
-import { slauth } from 'slauth'
-import { sqlite } from 'slauth/stores/sqlite'
+import { slauth } from 'slauthjs'
+import { sqlite } from 'slauthjs/stores/sqlite'
 import Database from 'better-sqlite3'
 import { headers } from 'next/headers'
 
@@ -44,7 +44,7 @@ export default async function Dashboard() {
 import { useEffect } from 'react'
 
 export default function SignIn() {
-  useEffect(() => void import('slauth/element'), [])
+  useEffect(() => void import('slauthjs/element'), [])
   return <slauth-sign-in app-name="My Next App" redirect="/dashboard" />
 }
 ```

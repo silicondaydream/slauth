@@ -6,7 +6,7 @@ description: createClient(), for building your own sign-in screens.
 When you want your own UI, `createClient()` wraps every route:
 
 ```js
-import { createClient, SlauthError } from 'slauth/client'
+import { createClient, SlauthError } from 'slauthjs/client'
 
 const auth = createClient() // { basePath: '/auth' }
 

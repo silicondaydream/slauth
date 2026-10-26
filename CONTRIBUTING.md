@@ -39,8 +39,7 @@ Starlight). When you change the library, change the docs in the same PR.
 
 ## Publishing to npm
 
-1. Check the package name. `slauth` is taken on npm, so publish under a scope you own,
-   e.g. `@slauth/core` (create the free `slauth` org on npmjs.com first), and update the
-   name in `package.json`, the imports in the docs and examples, and the README.
+1. The package is published as **`slauthjs`** (`slauth` was taken on npm). The library
+   and the site are still called slauth.
 2. Bump `version` in `package.json`.
 3. `npm publish --access public`. `prepublishOnly` runs the tests and type check.

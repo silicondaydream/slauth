@@ -1,7 +1,7 @@
 // bun run server.js  →  http://localhost:3000 (codes print in this terminal)
 import { Database } from 'bun:sqlite'
-import { slauth } from 'slauth'
-import { sqlite } from 'slauth/stores/sqlite'
+import { slauth } from 'slauthjs'
+import { sqlite } from 'slauthjs/stores/sqlite'
 
 const auth = slauth({
   secret: process.env.SLAUTH_SECRET ?? 'dev-only-secret-change-me',

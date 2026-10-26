@@ -1,7 +1,7 @@
 /**
  * Plain Node (node:http, Express, Connect): turns `auth.handle` into `(req, res, next)`.
  *
- *   import { toNodeHandler } from 'slauth/node'
+ *   import { toNodeHandler } from 'slauthjs/node'
  *   app.use('/auth', toNodeHandler(auth))            // Express
  *   const user = await auth.user(toRequest(req))     // in your own routes
  *

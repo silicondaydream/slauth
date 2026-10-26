@@ -5,8 +5,8 @@ description: slauth with Bun.serve and bun:sqlite.
 
 ```js title="server.js"
 import { Database } from 'bun:sqlite'
-import { slauth } from 'slauth'
-import { sqlite } from 'slauth/stores/sqlite'
+import { slauth } from 'slauthjs'
+import { sqlite } from 'slauthjs/stores/sqlite'
 
 const auth = slauth({
   secret: process.env.SLAUTH_SECRET,

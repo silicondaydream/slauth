@@ -5,8 +5,8 @@ description: slauth in a Hono app, with a middleware for protected routes.
 
 ```js
 import { Hono } from 'hono'
-import { slauth } from 'slauth'
-import { d1 } from 'slauth/stores/d1'
+import { slauth } from 'slauthjs'
+import { d1 } from 'slauthjs/stores/d1'
 
 const app = new Hono()
 

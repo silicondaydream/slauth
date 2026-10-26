@@ -35,7 +35,7 @@ The store you passed in.
 
 - `createClient({ basePath?, fetch? })`: see [Client helpers](/docs/client/helpers/).
 - `SlauthError`: `{ message, code, status, ...details }`.
-- `import 'slauth/element'`: registers [`<slauth-sign-in>`](/docs/client/sign-in-element/).
+- `import 'slauthjs/element'`: registers [`<slauth-sign-in>`](/docs/client/sign-in-element/).
 
 ## Node
 

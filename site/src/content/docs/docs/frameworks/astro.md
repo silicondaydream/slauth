@@ -6,8 +6,8 @@ description: slauth in Astro with an API route and middleware.
 Astro needs server output for this (any adapter: Cloudflare, Node, Vercel, Netlify).
 
 ```ts title="src/lib/auth.ts"
-import { slauth } from 'slauth'
-import { sqlite } from 'slauth/stores/sqlite'
+import { slauth } from 'slauthjs'
+import { sqlite } from 'slauthjs/stores/sqlite'
 import { DatabaseSync } from 'node:sqlite'
 
 export const auth = slauth({
@@ -43,13 +43,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 export const prerender = false
 ---
 <slauth-sign-in app-name="My Astro App" redirect="/app"></slauth-sign-in>
-<script>import 'slauth/element'</script>
+<script>import 'slauthjs/element'</script>
 ```
 
 Add `user` to `App.Locals` in `src/env.d.ts` to type it:
 
 ```ts
 declare namespace App {
-  interface Locals { user: import('slauth').SlauthUser | null }
+  interface Locals { user: import('slauthjs').SlauthUser | null }
 }
 ```

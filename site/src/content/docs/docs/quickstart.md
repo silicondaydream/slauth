@@ -10,7 +10,7 @@ This builds a Worker with email-code sign-in, passkeys and a protected `/api/me`
 ```sh
 npm create cloudflare@latest my-app -- --type hello-world
 cd my-app
-npm install slauth
+npm install slauthjs
 ```
 
 ## 2. Add a database and a secret
@@ -30,8 +30,8 @@ echo "SLAUTH_SECRET=$(openssl rand -base64 32)" > .dev.vars
 ## 3. Mount slauth
 
 ```js title="src/index.js"
-import { slauth } from 'slauth'
-import { d1 } from 'slauth/stores/d1'
+import { slauth } from 'slauthjs'
+import { d1 } from 'slauthjs/stores/d1'
 
 export default {
   async fetch(request, env) {
@@ -79,7 +79,7 @@ In a real app you'll use the [sign-in box](/docs/client/sign-in-element/) instea
 Sign up for [Resend](https://resend.com), verify your domain, then:
 
 ```js
-import { resend } from 'slauth/email/resend'
+import { resend } from 'slauthjs/email/resend'
 
 slauth({
   // ...

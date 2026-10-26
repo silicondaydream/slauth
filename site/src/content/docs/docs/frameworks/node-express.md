@@ -8,9 +8,9 @@ Node's `http` module doesn't use `Request`/`Response`, so slauth includes a smal
 ```js title="server.js"
 import express from 'express'
 import { DatabaseSync } from 'node:sqlite'
-import { slauth } from 'slauth'
-import { sqlite } from 'slauth/stores/sqlite'
-import { toNodeHandler, toRequest } from 'slauth/node'
+import { slauth } from 'slauthjs'
+import { sqlite } from 'slauthjs/stores/sqlite'
+import { toNodeHandler, toRequest } from 'slauthjs/node'
 
 const auth = slauth({
   secret: process.env.SLAUTH_SECRET,

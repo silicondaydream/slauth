@@ -35,7 +35,7 @@ slauth verifies the token's RS256 signature against your team's public keys (fet
 The Access check and the PIN lock are also exported on their own, for apps that only want those:
 
 ```js
-import { createAccess, createLock } from 'slauth'
+import { createAccess, createLock } from 'slauthjs'
 
 const access = createAccess({ teamDomain: 'yourteam', audience: env.ACCESS_AUD })
 const person = await access.getUser(request) // { email, userId } or null

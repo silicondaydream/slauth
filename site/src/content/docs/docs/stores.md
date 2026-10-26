@@ -8,7 +8,7 @@ A store is anything with `get`, `put` and `delete`. Pick the one that matches wh
 ## Cloudflare D1
 
 ```js
-import { d1 } from 'slauth/stores/d1'
+import { d1 } from 'slauthjs/stores/d1'
 slauth({ secret, store: d1(env.DB) })
 ```
 
@@ -17,7 +17,7 @@ Creates a `slauth_kv` table on first use, so there are no migrations to run, and
 ## SQLite
 
 ```js
-import { sqlite } from 'slauth/stores/sqlite'
+import { sqlite } from 'slauthjs/stores/sqlite'
 
 // Bun
 import { Database } from 'bun:sqlite'
@@ -37,7 +37,7 @@ Anything with `prepare(sql).get(...)` and `.run(...)` works. Also creates its ow
 ## Cloudflare Workers KV
 
 ```js
-import { kv } from 'slauth/stores/kv'
+import { kv } from 'slauthjs/stores/kv'
 slauth({ secret, store: kv(env.AUTH) })
 ```
 
@@ -46,7 +46,7 @@ Keys get a `slauth:` prefix (change it with `{ prefix }`). Two things to know: K
 ## Memory
 
 ```js
-import { memory } from 'slauth'
+import { memory } from 'slauthjs'
 slauth({ secret, store: memory() })
 ```
 

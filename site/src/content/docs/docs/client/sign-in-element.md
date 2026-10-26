@@ -4,7 +4,7 @@ description: <slauth-sign-in>, a drop-in web component for any framework.
 ---
 
 ```html
-<script type="module">import 'slauth/element'</script>
+<script type="module">import 'slauthjs/element'</script>
 
 <slauth-sign-in app-name="My App" redirect="/"></slauth-sign-in>
 ```

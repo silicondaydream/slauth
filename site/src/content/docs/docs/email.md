@@ -16,7 +16,7 @@ Perfect for building, useless for real people. slauth warns once at startup if y
 ## Resend
 
 ```js
-import { resend } from 'slauth/email/resend'
+import { resend } from 'slauthjs/email/resend'
 
 slauth({
   // ...
@@ -35,7 +35,7 @@ On Workers, with a `send_email` binding:
 ```
 
 ```js
-import { cloudflareEmail } from 'slauth/email/cloudflare'
+import { cloudflareEmail } from 'slauthjs/email/cloudflare'
 
 slauth({
   // ...

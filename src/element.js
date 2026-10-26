@@ -14,7 +14,7 @@ import { createClient } from './client.js'
  * no-passkeys (email codes only).
  * Fires `slauth:signed-in` with `{ detail: { user } }`.
  *
- *   import 'slauth/element'
+ *   import 'slauthjs/element'
  *   <slauth-sign-in app-name="Planda" redirect="/"></slauth-sign-in>
  */
 

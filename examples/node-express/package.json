@@ -3,5 +3,5 @@
   "private": true,
   "type": "module",
   "scripts": { "dev": "node server.js" },
-  "dependencies": { "express": "^5.1.0", "slauth": "file:../.." }
+  "dependencies": { "express": "^5.1.0", "slauthjs": "file:../.." }
 }

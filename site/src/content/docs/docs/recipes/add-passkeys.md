@@ -8,7 +8,7 @@ Passkeys are on by default. If you use the [sign-in box](/docs/client/sign-in-el
 To add a button to your settings page:
 
 ```js
-import { createClient } from 'slauth/client'
+import { createClient } from 'slauthjs/client'
 const auth = createClient()
 
 if (auth.passkey.supported()) {

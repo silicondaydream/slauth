@@ -1,6 +1,6 @@
-import { slauth } from 'slauth'
-import { d1 } from 'slauth/stores/d1'
-import { resend } from 'slauth/email/resend'
+import { slauth } from 'slauthjs'
+import { d1 } from 'slauthjs/stores/d1'
+import { resend } from 'slauthjs/email/resend'
 
 export default {
   async fetch(request, env) {

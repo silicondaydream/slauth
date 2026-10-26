@@ -6,9 +6,9 @@ on whatever you deploy to. Zero dependencies, about 29 kB.
 Sturdier than a password in an env var, and a lot less fuss than a hosted auth company.
 
 ```js
-import { slauth } from 'slauth'
-import { d1 } from 'slauth/stores/d1'
-import { resend } from 'slauth/email/resend'
+import { slauth } from 'slauthjs'
+import { d1 } from 'slauthjs/stores/d1'
+import { resend } from 'slauthjs/email/resend'
 
 const auth = slauth({
   secret: env.SLAUTH_SECRET,
@@ -21,7 +21,7 @@ const user = await auth.user(request) // { id, email, createdAt } or null
 ```
 
 ```html
-<script type="module">import 'slauth/element'</script>
+<script type="module">import 'slauthjs/element'</script>
 <slauth-sign-in app-name="My App" redirect="/"></slauth-sign-in>
 ```
 

@@ -10,7 +10,7 @@ Passkeys are on by default. Someone who's signed in can add one; after that, sig
 The [sign-in box](/docs/client/sign-in-element/) offers "Add a passkey" right after an email sign-in, and shows "Sign in with a passkey" on the first screen. To do it yourself:
 
 ```js
-import { createClient } from 'slauth/client'
+import { createClient } from 'slauthjs/client'
 const auth = createClient()
 
 if (auth.passkey.supported()) {

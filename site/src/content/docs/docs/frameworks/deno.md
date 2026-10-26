@@ -4,7 +4,7 @@ description: slauth with Deno.serve and Deno KV.
 ---
 
 ```js title="main.js"
-import { slauth } from 'npm:slauth'
+import { slauth } from 'npm:slauthjs'
 
 const kv = await Deno.openKv()
 const store = {

@@ -12,8 +12,8 @@ description: slauth is sign-in for side projects. Email codes and passkeys, your
 - **Zero dependencies**: about 29 kB of plain JavaScript with TypeScript types.
 
 ```js
-import { slauth } from 'slauth'
-import { d1 } from 'slauth/stores/d1'
+import { slauth } from 'slauthjs'
+import { d1 } from 'slauthjs/stores/d1'
 
 const auth = slauth({ secret: env.SLAUTH_SECRET, store: d1(env.DB) })
 
@@ -24,7 +24,7 @@ const user = await auth.user(request) // { id, email, createdAt } or null
 On the page, drop in the sign-in box:
 
 ```html
-<script type="module">import 'slauth/element'</script>
+<script type="module">import 'slauthjs/element'</script>
 <slauth-sign-in app-name="My App" redirect="/"></slauth-sign-in>
 ```
 

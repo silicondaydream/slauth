@@ -3,5 +3,5 @@
   "private": true,
   "type": "module",
   "scripts": { "dev": "bun run server.js" },
-  "dependencies": { "slauth": "file:../.." }
+  "dependencies": { "slauthjs": "file:../.." }
 }

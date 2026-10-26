@@ -8,7 +8,7 @@
     "deploy": "npm run copy && wrangler deploy"
   },
   "dependencies": {
-    "slauth": "file:../.."
+    "slauthjs": "file:../.."
   },
   "devDependencies": {
     "wrangler": "^4.40.0"

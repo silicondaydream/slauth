@@ -3,9 +3,9 @@ import { Code } from 'astro:components'
 import Site from '../layouts/Site.astro'
 import Sloth from '../components/Sloth.astro'
 
-const snippet = `import { slauth } from 'slauth'
-import { d1 } from 'slauth/stores/d1'
-import { resend } from 'slauth/email/resend'
+const snippet = `import { slauth } from 'slauthjs'
+import { d1 } from 'slauthjs/stores/d1'
+import { resend } from 'slauthjs/email/resend'
 
 const auth = slauth({
   secret: env.SLAUTH_SECRET,
@@ -19,7 +19,7 @@ if (url.pathname.startsWith('/auth/')) return auth.handle(request)
 // And in your own routes:
 const user = await auth.user(request) // { id, email } or null`
 
-const html = `<script type="module">import 'slauth/element'</script>
+const html = `<script type="module">import 'slauthjs/element'</script>
 
 <slauth-sign-in app-name="My App" redirect="/"></slauth-sign-in>`
 
@@ -47,7 +47,7 @@ const features = [
           <a class="btn primary" href="/docs/quickstart/">Get started →</a>
           <a class="btn" href="https://github.com/silicondaydream/slauth">Star on GitHub</a>
         </div>
-        <button class="copy-pill" type="button" data-copy="npm install slauth"><span class="prompt">$</span> npm install slauth <span aria-hidden="true">📋</span></button>
+        <button class="copy-pill" type="button" data-copy="npm install slauthjs"><span class="prompt">$</span> npm install slauthjs <span aria-hidden="true">📋</span></button>
       </div>
       <div class="hero-demo">
         <Sloth hang size="100%" class="hero-sloth" title="A sloth hanging from a branch" />
