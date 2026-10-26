@@ -1,6 +1,6 @@
 {
   // slauth.dev: the built site (dist/) served as static assets. No Worker code needed.
-  // Deploy: npm run deploy, then add slauth.dev as a custom domain on this Worker
+  // Deploy: pnpm run deploy (or Workers Builds with root directory `site`), then add slauth.dev as a custom domain on this Worker
   // (Workers & Pages → slauth-site → Settings → Domains & Routes).
   "name": "slauth-site",
   "compatibility_date": "2026-09-01",

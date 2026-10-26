@@ -1,5 +1,5 @@
 ---
-import { Code } from 'astro:components'
+import { Code } from '@astrojs/starlight/components'
 import Site from '../layouts/Site.astro'
 import Sloth from '../components/Sloth.astro'
 
@@ -76,11 +76,11 @@ const features = [
       <div class="code-stack">
         <div class="code-card">
           <div class="bar"><span class="dot" style="background:#f7b2c6"></span><span class="dot" style="background:#f59e0b"></span><span class="dot" style="background:#7aa340"></span>&nbsp;worker.js</div>
-          <Code code={snippet} lang="js" theme="vitesse-dark" />
+          <Code code={snippet} lang="js" frame="none" />
         </div>
         <div class="code-card">
           <div class="bar"><span class="dot" style="background:#f7b2c6"></span><span class="dot" style="background:#f59e0b"></span><span class="dot" style="background:#7aa340"></span>&nbsp;index.html</div>
-          <Code code={html} lang="html" theme="vitesse-dark" />
+          <Code code={html} lang="html" frame="none" />
         </div>
       </div>
     </div>

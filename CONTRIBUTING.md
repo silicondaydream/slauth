@@ -28,11 +28,15 @@ cd ../.. && node test/e2e-browser.mjs examples/workers-d1/dev.log   # needs play
 
 ```sh
 cd site
-npm install
-npm run dev       # http://localhost:4321
-npm run build     # static output in dist/
-npm run deploy    # wrangler deploy → the slauth-site Worker
+pnpm install
+pnpm dev          # http://localhost:4321
+pnpm build        # static output in dist/
+pnpm run deploy   # wrangler deploy → the slauth-site Worker
 ```
+
+The whole repo uses pnpm (the library and the site each have their own `pnpm-lock.yaml`).
+On Cloudflare Workers Builds, set the root directory to `site`, the build command to
+`pnpm run build` and the deploy command to `npx wrangler deploy`.
 
 Marketing pages are in `site/src/pages`, docs in `site/src/content/docs/docs` (Markdown,
 Starlight). When you change the library, change the docs in the same PR.
