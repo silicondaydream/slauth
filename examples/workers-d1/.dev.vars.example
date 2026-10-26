@@ -1,0 +1,3 @@
+SLAUTH_SECRET=change-me-to-a-long-random-string
+# RESEND_API_KEY=re_...
+# EMAIL_FROM=My App <hi@myapp.dev>

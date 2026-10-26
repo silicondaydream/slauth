@@ -1,0 +1,16 @@
+{
+  "name": "slauth-example-workers-d1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "copy": "node copy-client.js",
+    "dev": "npm run copy && wrangler dev",
+    "deploy": "npm run copy && wrangler deploy"
+  },
+  "dependencies": {
+    "slauthjs": "file:../.."
+  },
+  "devDependencies": {
+    "wrangler": "^4.40.0"
+  }
+}

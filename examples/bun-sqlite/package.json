@@ -1,0 +1,7 @@
+{
+  "name": "slauth-example-bun",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "bun run server.js" },
+  "dependencies": { "slauthjs": "file:../.." }
+}

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>slauth example</title>
+    <style>
+      body { font-family: system-ui, sans-serif; background: #fdf6ec; color: #2b2118; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 16px; }
+      main { width: 100%; max-width: 360px; }
+      button { font: inherit; font-weight: 600; padding: 8px 14px; border: 2px solid #2b2118; border-radius: 10px; background: #fff; cursor: pointer; }
+    </style>
+    <script type="module" src="/slauth/element.js"></script>
+  </head>
+  <body>
+    <main>
+      <slauth-sign-in app-name="the example" hidden></slauth-sign-in>
+      <section id="me" hidden>
+        <h1>Hi <span id="who"></span> 🦥</h1>
+        <p>This came from <code>/api/me</code>, which only answers signed-in people.</p>
+        <button id="passkey">Add a passkey</button>
+        <button id="out">Sign out</button>
+      </section>
+    </main>
+    <script type="module">
+      import { createClient } from '/slauth/client.js'
+      const auth = createClient()
+      const box = document.querySelector('slauth-sign-in')
+      const me = document.getElementById('me')
+
+      async function show() {
+        const res = await fetch('/api/me')
+        if (res.ok) {
+          document.getElementById("who").textContent = (await res.json()).hello
+          me.hidden = false
+          box.hidden = true
+        } else {
+          me.hidden = true
+          box.hidden = false
+        }
+      }
+      box.addEventListener('slauth:signed-in', show)
+      document.getElementById('out').onclick = async () => (await auth.signOut(), show())
+      document.getElementById('passkey').onclick = async () => {
+        try {
+          await auth.passkey.register()
+          alert('Passkey added. Sign out and try "Sign in with a passkey".')
+        } catch (e) {
+          alert(e.message)
+        }
+      }
+      show()
+    </script>
+  </body>
+</html>
