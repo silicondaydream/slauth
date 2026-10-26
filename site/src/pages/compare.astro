@@ -7,14 +7,22 @@ type Cell = [mark: '✅' | '⚠️' | '❌' | '', text: string]
 const rows: { label: string; cells: Cell[] }[] = [
   { label: 'Time to first sign-in', cells: [['✅', '2 minutes'], ['✅', '~5 minutes'], ['⚠️', 'An afternoon of providers and adapters'], ['✅', '~10 minutes']] },
   { label: 'Separate accounts per person', cells: [['❌', 'One password for everyone'], ['✅', 'Yes'], ['✅', 'Yes'], ['✅', 'Yes']] },
-  { label: 'Passkeys', cells: [['❌', 'No'], ['✅', 'Built in'], ['⚠️', 'Possible, with extra setup'], ['✅', 'Yes']] },
+  { label: 'Email codes & magic links', cells: [['❌', 'No'], ['✅', 'Built in'], ['⚠️', 'Magic links, with an email adapter'], ['✅', 'Yes']] },
+  { label: 'Passkeys', cells: [['❌', 'No'], ['✅', 'Built in'], ['⚠️', 'Experimental'], ['✅', 'Yes']] },
+  { label: '"Sign in with Google/GitHub/…"', cells: [['❌', 'No'], ['✅', '5 built in, plus any OIDC / OAuth 2'], ['✅', 'Dozens of providers'], ['✅', 'Lots']] },
+  { label: 'Passwords', cells: [['⚠️', 'Exactly one'], ['✅', 'Optional, email-verified'], ['⚠️', 'Credentials provider, DIY hashing'], ['✅', 'Yes']] },
+  { label: 'Two-factor (authenticator app)', cells: [['❌', 'No'], ['✅', 'With recovery codes'], ['❌', 'Build it yourself'], ['✅', 'Yes']] },
+  { label: 'Session & device management', cells: [['❌', 'No'], ['✅', 'List, revoke, sign out others'], ['⚠️', 'Build it yourself'], ['✅', 'Yes']] },
+  { label: 'Orgs, roles & invitations', cells: [['❌', 'No'], ['✅', 'Built in'], ['❌', 'Build it yourself'], ['✅', 'Yes']] },
+  { label: 'Admin API (ban, impersonate…)', cells: [['❌', 'No'], ['✅', 'Server-side API; bring your own UI'], ['❌', 'Build it yourself'], ['✅', 'API + hosted dashboard']] },
+  { label: 'JWTs for other services', cells: [['❌', 'No'], ['✅', 'ES256 + JWKS'], ['✅', 'JWT sessions'], ['✅', 'Yes']] },
+  { label: 'Drop-in UI', cells: [['❌', 'No'], ['✅', 'Sign-in box + account page (web components)'], ['⚠️', 'A basic sign-in page'], ['✅', 'Polished React components']] },
+  { label: 'SAML, SCIM, enterprise SSO', cells: [['❌', 'No'], ['❌', 'No'], ['⚠️', 'Via an identity provider'], ['✅', 'Yes (paid)']] },
   { label: 'Where your users live', cells: [['', 'An env var'], ['✅', 'Your database'], ['✅', 'Your database'], ['⚠️', 'Their servers']] },
   { label: 'Cost', cells: [['✅', 'Free'], ['✅', 'Free (MIT)'], ['✅', 'Free (open source)'], ['⚠️', 'Free tier, then per user']] },
   { label: 'Runs on Workers, Bun, Deno, Node', cells: [['✅', 'Anything'], ['✅', 'Anything with Request/Response'], ['⚠️', 'Best with Next.js; other frameworks vary'], ['⚠️', 'Through their SDKs']] },
   { label: 'Dependencies', cells: [['✅', 'None'], ['✅', 'None'], ['⚠️', 'Several'], ['⚠️', 'Their SDK']] },
-  { label: '"Sign in with Google/GitHub/…"', cells: [['❌', 'No'], ['❌', 'Not yet'], ['✅', 'Dozens of providers'], ['✅', 'Lots']] },
-  { label: 'Orgs, teams, SAML, admin UI', cells: [['❌', 'No'], ['❌', 'No, on purpose'], ['⚠️', 'Build it yourself'], ['✅', 'Yes']] },
-  { label: 'Survives a security review', cells: [['❌', 'Please no'], ['⚠️', 'Fine for personal; small, readable code'], ['✅', 'Widely used'], ['✅', 'That’s their job']] },
+  { label: 'Survives a security review', cells: [['❌', 'Please no'], ['⚠️', 'Small, readable, well tested; no audit yet'], ['✅', 'Widely used'], ['✅', 'That’s their job']] },
   { label: 'Fun', cells: [['⚠️', 'Until it leaks'], ['✅', 'There is a sloth'], ['⚠️', 'Lots of config'], ['⚠️', 'Polished, corporate']] },
 ]
 ---
@@ -25,7 +33,7 @@ const rows: { label: string; cells: Cell[] }[] = [
         <div>
           <span class="sticker">honest edition</span>
           <h1>How slauth compares</h1>
-          <p class="lede">slauth sits in the gap between "I put a password in an env var" and "I signed up for an auth company". Here's where it shines and where it doesn't.</p>
+          <p class="lede">slauth starts where "I put a password in an env var" ends, and goes most of the way to "I signed up for an auth company", without leaving your database. Here's where it shines and where it doesn't.</p>
         </div>
         <Sloth mood="wink" size={150} />
       </div>
@@ -55,9 +63,9 @@ const rows: { label: string; cells: Cell[] }[] = [
       <p class="aside-note">Comparisons as we understand them in late 2026. Other tools change; check their docs before deciding. Corrections are welcome on GitHub.</p>
 
       <div class="grid three picks">
-        <div class="card"><h3>Pick slauth if…</h3><p class="muted">it's your project, for you and a few (or a few thousand) people, and you'd like sign-in done today with users in your own database.</p></div>
-        <div class="card"><h3>Pick Auth.js if…</h3><p class="muted">you're on Next.js and need "Sign in with Google, GitHub and friends" now, and don't mind more configuration.</p></div>
-        <div class="card"><h3>Pick Clerk if…</h3><p class="muted">you're building a business with teams, orgs, admin dashboards and compliance needs, and would rather pay than run it.</p></div>
+        <div class="card"><h3>Pick slauth if…</h3><p class="muted">you want sign-in done today, users in your own database, and providers, two-factor and teams on hand for when the project grows, on any runtime.</p></div>
+        <div class="card"><h3>Pick Auth.js if…</h3><p class="muted">you're on Next.js and need one of the dozens of providers slauth doesn't ship, and don't mind more configuration.</p></div>
+        <div class="card"><h3>Pick Clerk if…</h3><p class="muted">you need SAML, a hosted admin dashboard and compliance paperwork, and would rather pay than run it.</p></div>
       </div>
     </div>
   </section>

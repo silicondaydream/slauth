@@ -102,8 +102,11 @@ export function slauth(config) {
 
   /* ---------- who's asking ---------- */
 
-  /** The session and user behind a request, or null. */
-  async function current(request) {
+  /**
+   * The session and user behind a request, or null. JWTs count only for your own routes
+   * (auth.user), never for slauth's: a token must not be able to mint the next one.
+   */
+  async function current(request, { jwt = false } = {}) {
     const session = await sessions.read(request)
     if (session) {
       const found = await users.byId(session.userId)
@@ -111,7 +114,7 @@ export function slauth(config) {
       if (found && !found.bannedAt && (await users.allowed(found.email, { method: 'session' }))) return { user: found, session }
     }
     const bearer = request.headers.get('authorization')
-    if (tokens && bearer?.startsWith('Bearer ') && bearer.split('.').length === 3) {
+    if (jwt && tokens && bearer?.startsWith('Bearer ') && bearer.split('.').length === 3) {
       const claims = await tokens.verify(bearer.slice(7).trim())
       const found = claims && (await users.byId(claims.sub))
       if (found && !found.bannedAt) return { user: found, session: null, claims }
@@ -128,7 +131,7 @@ export function slauth(config) {
 
   /** The signed-in person, or null. Doesn't look at the app lock; see requireUser. */
   async function user(request) {
-    const found = await current(request)
+    const found = await current(request, { jwt: true })
     return found ? publicUser(found.user) : null
   }
 
@@ -319,7 +322,7 @@ export function slauth(config) {
     requireUser,
     /** The user and the session behind a request (session is null for Access or a JWT), or null. */
     async session(request) {
-      const found = await current(request)
+      const found = await current(request, { jwt: true })
       if (!found) return null
       const s = found.session
       return { user: publicUser(found.user), session: s ? { id: s.id, userId: s.userId, createdAt: s.createdAt, method: s.method ?? null, impersonatorId: s.impersonatorId ?? null } : null }

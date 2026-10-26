@@ -27,6 +27,10 @@ describe('tokens for your APIs', () => {
     expect(await auth.verifyToken(token)).toMatchObject({ email: 'me@example.com', plan: 'pro', iss: 'https://app.example' })
     // And auth.user takes it as a bearer token.
     expect((await auth.user(new Request('https://app.example/api', { headers: { authorization: `Bearer ${token}` } }))).email).toBe('me@example.com')
+    // But slauth's own routes don't: a token can't be swapped for a fresh one, or change the account.
+    const withJwt = (path) => auth.handle(new Request(`https://app.example${path}`, { headers: { authorization: `Bearer ${token}` } }))
+    expect((await withJwt('/auth/token')).status).toBe(401)
+    expect((await (await withJwt('/auth/session')).json()).user).toBeNull()
   })
 
   it('refuses tampered and expired tokens', async () => {

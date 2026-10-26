@@ -17,7 +17,12 @@ const auth = slauth({
 if (url.pathname.startsWith('/auth/')) return auth.handle(request)
 
 // And in your own routes:
-const user = await auth.user(request) // { id, email } or null`
+const user = await auth.user(request) // or null
+
+// Going deeper is one key each:
+//   providers: [github(…), google(…)]
+//   passwords, twoFactor, magicLinks,
+//   organizations, tokens: true`
 
 const html = `<script type="module">import 'slauthjs/element'</script>
 
@@ -29,20 +34,29 @@ const features = [
   { icon: '🗄️', title: 'Your database', body: 'D1, SQLite, Workers KV, memory, or any get/put/delete. Your users never live on someone else’s server.' },
   { icon: '📌', title: 'PIN app lock', body: 'An optional 4-digit PIN on top, asked every visit, daily, weekly or never. Each person chooses.' },
   { icon: '🌍', title: 'Runs anywhere', body: 'Cloudflare Workers, Bun, Deno, Node, Next.js, Astro, Hono. If it speaks Request/Response, it works.' },
-  { icon: '🪶', title: 'Zero dependencies', body: 'About 29 kB of plain JavaScript with types. Read the whole thing over a coffee.' },
+  { icon: '🪶', title: 'Zero dependencies', body: 'Plain JavaScript and Web Crypto, with types. Small enough to read, and nothing to keep patched.' },
+]
+
+const deeper = [
+  { icon: '🐙', title: 'Sign in with GitHub, Google & co.', body: 'GitHub, Google, Discord, GitLab, Microsoft, or any OpenID Connect provider. PKCE, linking, verified emails only.', href: '/docs/sign-in/providers/' },
+  { icon: '🔐', title: 'Passwords & two-factor', body: 'Optional passwords (proved by email first), authenticator apps with recovery codes, and magic links.', href: '/docs/sign-in/two-factor/' },
+  { icon: '👥', title: 'Organizations', body: 'Teams with owners, admins and your own roles, plus email invitations. orgs.require() guards your routes.', href: '/docs/accounts/organizations/' },
+  { icon: '🛠️', title: 'Admin API', body: 'Roles, metadata, list, ban, delete and impersonate users. Events for sign-ups and sign-ins.', href: '/docs/accounts/users/' },
+  { icon: '📱', title: 'Sessions & devices', body: 'People see where they’re signed in and sign other devices out. Bearer tokens for mobile apps.', href: '/docs/accounts/sessions/' },
+  { icon: '🎟️', title: 'JWTs for your APIs', body: 'Short-lived ES256 tokens your other services check against /auth/jwks.json. No shared secret.', href: '/docs/accounts/tokens/' },
 ]
 ---
-<Site title="slauth: auth for side projects" description="Email codes and passkeys in five minutes. Your database, zero dependencies, runs anywhere. Less fuss than Clerk, sturdier than a hard-coded password.">
+<Site title="slauth: auth for side projects, and what they grow into" description="Open-source auth you own. Email codes and passkeys in five minutes; providers, two-factor, organizations and JWTs when you need them. Your database, zero dependencies, runs anywhere.">
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <div class="stickers">
-          <span class="sticker">v1 · MIT</span>
+          <span class="sticker">v2 · MIT</span>
           <span class="sticker leaf">zero dependencies</span>
           <span class="sticker pink">no invoices</span>
         </div>
         <h1>Auth for <span class="highlight">side projects</span>.</h1>
-        <p class="lede">Slow sloth, fast login. Email codes and passkeys in five minutes, in <em>your</em> database, on whatever you deploy to. Sturdier than a password in an env var, and a lot less fuss than a hosted auth company.</p>
+        <p class="lede">Slow sloth, fast login. Email codes and passkeys in five minutes, in <em>your</em> database, on whatever you deploy to. And when the side project grows up: GitHub and Google sign-in, two-factor, organizations and an admin API, one config key at a time. Like Clerk, without the invoice.</p>
         <div class="actions">
           <a class="btn primary" href="/docs/quickstart/">Get started →</a>
           <a class="btn" href="https://github.com/silicondaydream/slauth">Star on GitHub</a>
@@ -106,6 +120,25 @@ const features = [
   <section class="block tint">
     <div class="wrap">
       <div class="section-head">
+        <h2>Go as deep as you need.</h2>
+        <p class="muted">Everything below is off until you turn it on, so the five-minute version stays five minutes.</p>
+      </div>
+      <div class="grid three">
+        {deeper.map((f) => (
+          <a class="card feature deep" href={f.href}>
+            <div class="icon" aria-hidden="true">{f.icon}</div>
+            <h3>{f.title}</h3>
+            <p class="muted">{f.body}</p>
+          </a>
+        ))}
+      </div>
+      <p class="aside-note">And a whole account page in one tag: <code>&lt;slauth-account&gt;</code>. <a href="/docs/client/account-element/">See it →</a></p>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="section-head">
         <h2>How it works</h2>
         <p class="muted">Three steps, and the middle one is your users checking their email.</p>
       </div>
@@ -117,24 +150,25 @@ const features = [
     </div>
   </section>
 
-  <section class="block">
+  <section class="block tint">
     <div class="wrap grid two">
       <div class="card">
         <h3>👍 Great for</h3>
         <ul>
           <li>Side projects, prototypes and hackathon apps</li>
           <li>Tools for you, your family and friends</li>
-          <li>Small apps that should own their users' data</li>
+          <li>Products that should own their users' data</li>
+          <li>Teams and SaaS apps that don't want a per-user bill</li>
           <li>A suite of apps that share one sign-in</li>
         </ul>
       </div>
       <div class="card">
         <h3>🙅 Not for (use something bigger)</h3>
         <ul>
-          <li>Enterprise SSO, SAML or SCIM</li>
-          <li>Teams, orgs and role management</li>
+          <li>Enterprise SSO: SAML, SCIM, per-org identity providers</li>
+          <li>A hosted dashboard you didn't build</li>
           <li>Compliance paperwork (SOC 2 and friends)</li>
-          <li>"Sign in with 40 different providers"</li>
+          <li>Someone else to page at 3am</li>
         </ul>
         <p class="aside-note">We'd rather tell you now than after you've built on it. <a href="/compare">See how it compares →</a></p>
       </div>
@@ -176,6 +210,8 @@ const features = [
       inbox.hidden = false
       return reply(200, { ok: true })
     }
+    if (url.endsWith('/config')) return reply(200, { appName: 'the demo', emailCodes: true, magicLinks: false, passkeys: false, passwords: false, twoFactor: false, organizations: false, providers: [] })
+    if (url.endsWith('/session')) return reply(200, { user: null })
     if (url.endsWith('email/verify')) {
       if (String(body.code).trim() !== pending) return reply(400, { error: 'That code is wrong.', code: 'bad-code' })
       return reply(200, { user: { id: 'usr_demo', email: body.email, createdAt: Date.now() } })
@@ -228,6 +264,8 @@ const features = [
   .code-card :global(pre) { margin: 0; padding: 18px; font-size: 13.5px; overflow-x: auto; }
   .feature .icon { font-size: 30px; width: 54px; height: 54px; display: grid; place-items: center; border: var(--line); border-radius: 14px; background: var(--bg-2); margin-bottom: 14px; }
   .feature p { margin: 0; }
+  a.feature.deep { color: inherit; text-decoration: none; display: block; }
+  a.feature.deep:hover { transform: translate(-1px, -1px); }
   .steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 20px; }
   @media (min-width: 820px) { .steps { grid-template-columns: repeat(3, 1fr); } }
   .steps .num { display: inline-grid; place-items: center; width: 40px; height: 40px; border: var(--line); border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-weight: 800; margin-bottom: 12px; }
