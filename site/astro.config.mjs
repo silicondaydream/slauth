@@ -8,7 +8,7 @@ export default defineConfig({
     starlight({
       title: 'slauth',
       disable404Route: true,
-      description: 'Auth for side projects: email codes and passkeys, your own database, zero dependencies.',
+      description: 'Open-source auth you own: email codes, passkeys, providers, two-factor and organizations. Your database, zero dependencies.',
       logo: { src: './src/assets/sloth.svg', alt: '' },
       favicon: '/favicon.svg',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/silicondaydream/slauth' }],
@@ -28,7 +28,23 @@ export default defineConfig({
       sidebar: [
         { label: 'Start here', items: ['docs', 'docs/quickstart', 'docs/installation', 'docs/configuration'] },
         { label: 'Concepts', items: ['docs/concepts/how-it-works', 'docs/concepts/security'] },
-        { label: 'Signing in', items: ['docs/sign-in/email-codes', 'docs/sign-in/passkeys', 'docs/sign-in/cloudflare-access', 'docs/sign-in/app-lock'] },
+        {
+          label: 'Signing in',
+          items: [
+            'docs/sign-in/email-codes',
+            'docs/sign-in/passkeys',
+            'docs/sign-in/providers',
+            'docs/sign-in/magic-links',
+            'docs/sign-in/passwords',
+            'docs/sign-in/two-factor',
+            'docs/sign-in/cloudflare-access',
+            'docs/sign-in/app-lock',
+          ],
+        },
+        {
+          label: 'Accounts',
+          items: ['docs/accounts/users', 'docs/accounts/sessions', 'docs/accounts/organizations', 'docs/accounts/tokens', 'docs/accounts/events'],
+        },
         { label: 'Plug in', items: ['docs/stores', 'docs/email'] },
         {
           label: 'Frameworks',
@@ -42,7 +58,7 @@ export default defineConfig({
             'docs/frameworks/node-express',
           ],
         },
-        { label: 'In the browser', items: ['docs/client/sign-in-element', 'docs/client/helpers'] },
+        { label: 'In the browser', items: ['docs/client/sign-in-element', 'docs/client/account-element', 'docs/client/helpers'] },
         {
           label: 'Recipes',
           items: ['docs/recipes/invite-only', 'docs/recipes/app-suite', 'docs/recipes/add-passkeys', 'docs/recipes/from-a-hardcoded-password'],

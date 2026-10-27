@@ -45,3 +45,42 @@ describe('client', () => {
     expect((await client.session().catch((e) => e)).code).toBe('offline')
   })
 })
+
+describe('client, going deeper', () => {
+  it('works without cookies, keeping a bearer token', async () => {
+    const { auth, mailbox } = setup()
+    let saved = null
+    const bare = async (path, init = {}) => {
+      const headers = new Headers(init.headers)
+      if (init.method === 'POST') headers.set('origin', ORIGIN)
+      return auth.handle(new Request(`${ORIGIN}${path}`, { ...init, headers }))
+    }
+    const client = createClient({ fetch: bare, token: { get: () => saved, set: (t) => void (saved = t) } })
+    await client.email.start('me@example.com')
+    await client.email.verify('me@example.com', mailbox[0].code)
+    expect(saved).toBeTruthy()
+    expect((await client.session()).user.email).toBe('me@example.com')
+    await client.signOut()
+    expect(saved).toBeNull()
+    expect((await client.session()).user).toBeNull()
+  })
+
+  it('reuses a JWT until it is nearly expired', async () => {
+    const { auth, mailbox } = setup({ tokens: true })
+    let calls = 0
+    const fetch = tab(auth)
+    const counting = (path, init) => ((calls += path.endsWith('/token') ? 1 : 0), fetch(path, init))
+    const client = createClient({ fetch: counting })
+    await client.email.start('me@example.com')
+    await client.email.verify('me@example.com', mailbox[0].code)
+    const first = await client.getToken()
+    expect(await client.getToken()).toBe(first)
+    expect(calls).toBe(1)
+    expect((await auth.verifyToken(first)).email).toBe('me@example.com')
+  })
+
+  it('builds provider links', () => {
+    const client = createClient({ basePath: '/api/auth/' })
+    expect(client.oauth.url('github', { redirect: '/app' })).toBe('/api/auth/oauth/github?redirect=%2Fapp')
+  })
+})

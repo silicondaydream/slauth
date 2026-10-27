@@ -26,5 +26,10 @@ export function memory() {
     async delete(key) {
       rows.delete(key)
     },
+    async list(prefix, { limit = 100, cursor } = {}) {
+      const keys = [...rows.keys()].filter((k) => k.startsWith(prefix) && (!cursor || k > cursor) && live(k)).sort()
+      const page = keys.slice(0, limit)
+      return { items: page.map((key) => ({ key, value: structuredClone(rows.get(key).value) })), cursor: keys.length > limit ? page.at(-1) : null }
+    },
   }
 }

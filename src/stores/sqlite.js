@@ -1,8 +1,10 @@
+import { page } from './d1.js'
+
 /**
  * Any synchronous SQLite handle with `prepare(sql).get(...)` / `.run(...)`: bun:sqlite,
  * better-sqlite3 and node:sqlite all fit. Creates its own table on first use.
  *
- * @param {{ prepare(sql: string): { get(...args: unknown[]): any, run(...args: unknown[]): unknown } }} db
+ * @param {{ prepare(sql: string): { get(...args: unknown[]): any, run(...args: unknown[]): unknown, all(...args: unknown[]): any[] } }} db
  * @param {{ table?: string }} [options]
  * @returns {import('../index.js').Store}
  */
@@ -14,6 +16,7 @@ export function sqlite(db, { table = 'slauth_kv' } = {}) {
     `INSERT INTO ${table} (key, value, expires_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, expires_at = excluded.expires_at`,
   )
   const remove = db.prepare(`DELETE FROM ${table} WHERE key = ?`)
+  let scan = null
 
   return {
     async get(key) {
@@ -30,6 +33,10 @@ export function sqlite(db, { table = 'slauth_kv' } = {}) {
     },
     async delete(key) {
       remove.run(key)
+    },
+    async list(prefix, { limit = 100, cursor } = {}) {
+      scan ??= db.prepare(`SELECT key, value FROM ${table} WHERE key >= ? AND key < ? AND key > ? AND (expires_at IS NULL OR expires_at > ?) ORDER BY key LIMIT ?`)
+      return page(scan.all(prefix, prefix + '\uffff', cursor ?? '', Date.now(), limit + 1), limit)
     },
   }
 }

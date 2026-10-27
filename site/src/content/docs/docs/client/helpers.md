@@ -45,16 +45,35 @@ try {
 
 All the codes are on the [Errors](/docs/reference/errors/) page.
 
+## Two-factor
+
+Every sign-in call can answer `{ twoFactor: true }` instead of `{ user }` when the person has [two-factor](/docs/sign-in/two-factor/) on:
+
+```js
+const result = await auth.password.signIn(email, password)
+if (result.twoFactor) await auth.twoFactor.verify(await askForCode())
+```
+
 ## Everything it has
 
 | | |
 |---|---|
-| `session()` | `{ user, lock? }` |
-| `email.start(email)` / `email.verify(email, code)` | the email-code flow |
+| `session()` | `{ user, twoFactor?, lock? }` |
+| `config()` | what's turned on, and the providers |
+| `email.start(email, { redirect? })` / `email.verify(email, code)` | the email-code flow |
+| `email.change.start(email)` / `email.change.verify(email, code)` | change address |
+| `oauth.signIn(id, { redirect? })` / `oauth.link(id)` / `oauth.url(id)` | [providers](/docs/sign-in/providers/) |
+| `password.signIn` / `signUp` / `set` / `remove` | [passwords](/docs/sign-in/passwords/) |
+| `twoFactor.verify` / `setup` / `enable` / `disable` / `recoveryCodes` | [two-factor](/docs/sign-in/two-factor/) |
 | `passkey.supported()` | can this browser do passkeys? |
 | `passkey.register(name?)` / `passkey.signIn()` | add one / sign in with one |
-| `passkey.list()` / `passkey.remove(id)` | manage them |
+| `passkey.list()` / `rename(id, name)` / `remove(id)` | manage them |
+| `user.update({ name, image })` / `user.delete()` | the profile |
+| `sessions.list()` / `revoke(id)` / `revokeOthers()` | [devices](/docs/accounts/sessions/) |
+| `accounts.list()` / `unlink(provider)` | linked providers |
+| `getToken()` | a [JWT](/docs/accounts/tokens/) for your APIs, cached |
+| `orgs.*` | [organizations](/docs/accounts/organizations/) and invitations |
 | `signOut()` | end the session |
 | `lock.*` | the [app lock](/docs/sign-in/app-lock/): `setup`, `skip`, `unlock`, `setPolicy`, `changePin`, `lockNow` |
 
-Pass `createClient({ fetch })` to use your own `fetch`, e.g. in tests.
+Pass `createClient({ fetch })` to use your own `fetch`, e.g. in tests, and `createClient({ token: { get, set } })` for [apps without cookies](/docs/accounts/sessions/#apps-without-cookies).

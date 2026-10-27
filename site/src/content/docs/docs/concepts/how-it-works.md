@@ -7,14 +7,14 @@ slauth has four moving parts.
 
 ## Users
 
-A user is `{ id, email, createdAt }`. That's all slauth keeps about someone. Anything else (their name, settings, their data) belongs in your own tables, keyed by `user.id`:
+A user is `{ id, email, name, image, roles, metadata, createdAt }` (see [Users](/docs/accounts/users/)). Anything else (settings, their data) belongs in your own tables, keyed by `user.id`:
 
 ```js
 const user = await auth.user(request)
 const notes = await env.DB.prepare('SELECT * FROM notes WHERE user_id = ?').bind(user.id).all()
 ```
 
-A user is created the first time someone signs in with an email the [allow list](/docs/configuration/#allow) lets in. The same email always gets the same `id`, however they sign in (email code, passkey or Cloudflare Access).
+A user is created the first time someone signs in with an email the [allow list](/docs/configuration/#allow) lets in. The same email always gets the same `id`, however they sign in (email code, link, password, passkey, a provider with a verified email, or Cloudflare Access).
 
 ## Sessions
 
@@ -34,6 +34,7 @@ interface Store {
   get(key: string): Promise<any>
   put(key: string, value: unknown, options?: { ttl?: number }): Promise<void> // ttl in seconds
   delete(key: string): Promise<void>
+  list?(prefix: string, options?: { limit?: number; cursor?: string }): Promise<{ items: { key: string; value: any }[]; cursor: string | null }> // only for auth.users.list()
 }
 ```
 
@@ -41,7 +42,7 @@ D1, SQLite, Workers KV and memory come built in. [Writing your own](/docs/stores
 
 ## Routes
 
-`auth.handle(request)` answers every route under `/auth/`: asking for a code, checking it, passkeys, signing out and the session. Your code asks two questions:
+`auth.handle(request)` answers every route under `/auth/`: asking for a code, checking it, passkeys, providers, signing out, the session and everything else you turn on. Your code asks two questions:
 
 - `await auth.user(request)`: who's signed in? (`null` if nobody)
 - `await auth.requireUser(request)`: the signed-in, unlocked person, or a ready-made `401` Response to return.

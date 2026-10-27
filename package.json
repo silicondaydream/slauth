@@ -1,7 +1,7 @@
 {
   "name": "slauthjs",
-  "version": "1.0.0",
-  "description": "Auth for side projects: email codes and passkeys, your own database, zero dependencies. Runs on Workers, Bun, Deno and Node.",
+  "version": "2.0.0",
+  "description": "Open-source auth you own: email codes, passkeys, \"Sign in with GitHub/Google\", passwords, two-factor, sessions, organizations and JWTs. Your database, zero dependencies. Runs on Workers, Bun, Deno and Node.",
   "license": "MIT",
   "type": "module",
   "main": "./src/index.js",
@@ -15,9 +15,17 @@
       "types": "./src/client.d.ts",
       "default": "./src/client.js"
     },
+    "./providers": {
+      "types": "./src/providers.d.ts",
+      "default": "./src/providers.js"
+    },
     "./element": {
       "types": "./src/element.d.ts",
       "default": "./src/element.js"
+    },
+    "./account": {
+      "types": "./src/account-element.d.ts",
+      "default": "./src/account-element.js"
     },
     "./node": {
       "types": "./src/node.d.ts",
@@ -54,10 +62,12 @@
   },
   "files": [
     "src",
+    "CHANGELOG.md",
     "!src/**/*.test.js"
   ],
   "sideEffects": [
-    "./src/element.js"
+    "./src/element.js",
+    "./src/account-element.js"
   ],
   "engines": {
     "node": ">=20"
@@ -75,14 +85,23 @@
   "keywords": [
     "auth",
     "authentication",
+    "oauth",
+    "oidc",
+    "sign-in-with-github",
     "passkeys",
     "webauthn",
-    "magic-code",
+    "two-factor",
+    "totp",
+    "magic-link",
+    "sessions",
+    "organizations",
+    "jwt",
+    "nextauth-alternative",
+    "clerk-alternative",
     "cloudflare-workers",
     "d1",
     "bun",
-    "deno",
-    "side-project"
+    "deno"
   ],
   "homepage": "https://slauth.dev",
   "repository": {

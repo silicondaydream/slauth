@@ -14,5 +14,14 @@ export function kv(namespace, { prefix = 'slauth:' } = {}) {
     put: (key, value, { ttl } = {}) =>
       namespace.put(prefix + key, JSON.stringify(value), ttl ? { expirationTtl: Math.max(60, Math.ceil(ttl)) } : undefined),
     delete: (key) => namespace.delete(prefix + key),
+    async list(keyPrefix, { limit = 100, cursor } = {}) {
+      const page = await namespace.list({ prefix: prefix + keyPrefix, limit, cursor: cursor ?? undefined })
+      const items = []
+      for (const { name } of page.keys) {
+        const value = await namespace.get(name, 'json')
+        if (value !== null) items.push({ key: name.slice(prefix.length), value })
+      }
+      return { items, cursor: page.list_complete ? null : page.cursor }
+    },
   }
 }

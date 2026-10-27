@@ -61,4 +61,4 @@ const postmark = {
 slauth({ /* ... */ email: postmark })
 ```
 
-`subject`, `text` and `html` are ready to send. `code` and `appName` are there if you'd rather write your own email. If `send()` throws, the request fails with a 500 and the person can try again.
+`subject`, `text` and `html` are ready to send. `kind` (`sign-in`, `email-change` or `invite`), `code`, `link` and `appName` are there if you'd rather write your own email, or use the config's [`emails`](/docs/accounts/events/#your-own-emails) option to change just the wording. If `send()` throws, the request fails with a 500 and the person can try again.

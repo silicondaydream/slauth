@@ -39,3 +39,53 @@ client.passkey.supported()
 document.createElement('slauth-sign-in')
 toNodeHandler(auth)
 createLock({ get: async () => null, put: async () => {} })
+
+// slauth 2: the deeper end.
+import { github, google, oidc, oauth2, microsoft } from 'slauthjs/providers'
+import 'slauthjs/account'
+import { totp, type StoredUser, type Slauth } from 'slauthjs'
+
+const full: Slauth = slauth({
+  secret: 'x'.repeat(32),
+  store: memory(),
+  baseUrl: 'https://app.dev',
+  signInPage: '/login',
+  providers: [
+    github({ clientId: 'a', clientSecret: 'b' }),
+    google({ clientId: 'a', clientSecret: 'b' }),
+    microsoft({ clientId: 'a', tenant: 'my-tenant', trustEmail: true }),
+    oidc({ id: 'corp', name: 'Corp', issuer: 'https://id.corp', clientId: 'a' }),
+    oauth2({ id: 'x', name: 'X', clientId: 'a', authorization: 'https://x/a', token: 'https://x/t', profile: async () => ({ id: '1', email: 'a@b.c', emailVerified: true }) }),
+  ],
+  magicLinks: true,
+  passwords: { minLength: 10, validate: (p) => (p === 'password123' ? 'Too common.' : null) },
+  twoFactor: true,
+  tokens: { minutes: 10, audience: 'api', claims: (u) => ({ plan: u.metadata.plan }) },
+  organizations: { allowCreate: (u) => u.roles.includes('staff') },
+  rateLimit: { limits: { 'email/start': [5, 60] } },
+  freshMinutes: 10,
+  allow: (email, context) => context.method !== 'oauth' || email.endsWith('@corp.dev'),
+  on: { signUp: async ({ user }) => void user.email, userDeleted: ({ user }) => void user.id },
+  emails: (kind, data) => (kind === 'sign-in' ? { subject: `Code ${data.code}`, text: '', html: '' } : null),
+})
+
+export async function deeper(request: Request) {
+  const admin = await full.requireUser(request, { role: 'admin' })
+  if (admin instanceof Response) return admin
+  const stored: StoredUser | null = await full.users.get(admin.id)
+  await full.users.update(admin.id, { roles: ['admin'], privateMetadata: { stripe: 'cus_1' } })
+  await full.sessions.revokeAll(admin.id)
+  const { token } = await full.createToken(admin)
+  const claims = await full.verifyToken(token)
+  const member = await full.orgs!.require(request, 'org_1', { role: ['owner', 'admin'] })
+  if (!(member instanceof Response)) member.orgRole
+  await totp('JBSWY3DPEHPK3PXP')
+  return { stored, claims }
+}
+
+const deep = createClient({ token: { get: () => null, set: () => {} } })
+deep.oauth.signIn('github', { redirect: '/' })
+deep.twoFactor.verify({ recoveryCode: 'abcde-fghij' })
+deep.getToken().then((t: string) => t)
+deep.orgs.invite('org_1', 'pal@example.com', 'admin')
+document.createElement('slauth-account')
