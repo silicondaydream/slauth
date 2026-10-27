@@ -245,3 +245,21 @@ describe('config route', () => {
     })
   })
 })
+
+describe('upgrading from 1.x', () => {
+  it('sessions made by 1.x keep working and can be revoked', async () => {
+    const { auth, browser } = setup()
+    const user = await auth.users.create({ email: 'me@example.com' })
+    // Exactly what slauth 1.x stored: no index, no method.
+    const token = 'old-token-from-v1'
+    const hash = btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    await auth.store.put(`session:${hash}`, { userId: user.id, createdAt: Date.now(), refreshedAt: Date.now() }, { ttl: 30 * 86400 })
+    await auth.store.put(`user:${user.id}`, { id: user.id, email: user.email, createdAt: user.createdAt })
+    const b = browser()
+    b.jar.set('slauth_session', token)
+    expect(await b.user()).toMatchObject({ email: 'me@example.com', name: null, roles: [] })
+    expect(await auth.sessions.list(user.id)).toHaveLength(1)
+    await auth.sessions.revokeAll(user.id)
+    expect(await b.user()).toBeNull()
+  })
+})

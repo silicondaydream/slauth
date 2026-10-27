@@ -69,7 +69,17 @@ export function createSessions({ store, cookie, days }) {
       if (!token) return null
       const id = await idFor(token)
       const session = await store.get(`session:${id}`)
-      return session ? { ...session, id, token } : null
+      if (!session) return null
+      // A session from slauth 1.x: add it to the index, so revoking and banning reach it.
+      if (!('method' in session)) {
+        const left = Math.ceil((session.refreshedAt + ttl * 1000 - Date.now()) / 1000)
+        if (left <= 0) return null
+        Object.assign(session, { method: null, userAgent: null, ip: null, impersonatorId: null })
+        await store.put(`session:${id}`, session, { ttl: left })
+        const ids = (await store.get(`sessions:${session.userId}`)) ?? []
+        if (!ids.includes(id)) await store.put(`sessions:${session.userId}`, [...ids.slice(-49), id])
+      }
+      return { ...session, id, token }
     },
 
     /** Restarts the 30 days at most once a day; returns a Set-Cookie value when it did. */

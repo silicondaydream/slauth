@@ -48,6 +48,24 @@ new is opt-in and still dependency-free.
 - Users carry more fields. Users stored by 1.x are read with defaults; nothing to migrate.
 - `<slauth-sign-in>` without a bundler needs `ui.js` next to `element.js` and `client.js`.
 
+### Upgrading from 1.x
+
+No data migration: users and sessions saved by 1.x keep working (old sessions join the
+new per-user index the first time they're used). Check these:
+
+1. **A settings-page "Add passkey" button** may now answer `reauth-required` for people
+   who signed in over 15 minutes ago. Ask them to sign in again, or set `freshMinutes`.
+2. **Serving the element without a bundler?** Copy `ui.js` next to `element.js` and
+   `client.js`, or the element won't load.
+3. **Per-IP rate limits are on** where the host sets `CF-Connecting-IP`, `Fly-Client-IP`
+   or `X-Real-IP`: 10 code requests per IP per 10 minutes. Many people behind one office
+   IP could hit it; raise it with `rateLimit.limits` or set `rateLimit: false`.
+4. **A few more store writes**: each sign-in also updates the person's session list, and
+   rate limiting keeps counters. Fine for D1 and SQLite; on Workers KV's free tier
+   (1,000 writes a day), consider `rateLimit: false`.
+5. `auth.user()` returns more fields (`name`, `image`, `roles`, `metadata`). Code that
+   compared the whole object, or stored it, sees the new keys.
+
 ## 1.0.0
 
 Email codes, passkeys, sessions, stores (D1, SQLite, KV, memory), Resend and Cloudflare
