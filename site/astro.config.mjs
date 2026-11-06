@@ -9,7 +9,7 @@ export default defineConfig({
       title: 'slauth',
       disable404Route: true,
       description: 'Open-source auth you own: email codes, passkeys, providers, two-factor and organizations. Your database, zero dependencies.',
-      logo: { src: './src/assets/sloth.svg', alt: '' },
+      logo: { light: './src/assets/sloth.svg', dark: './src/assets/sloth-dark.svg', alt: '' },
       favicon: '/favicon.svg',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/silicondaydream/slauth' }],
       customCss: ['./src/styles/docs.css'],

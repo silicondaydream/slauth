@@ -15,6 +15,9 @@
   --radius: 16px;
   --font: 'Bricolage Grotesque', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* The sloth's outer outline: ink on light, a cream sticker edge on dark. */
+  --sloth-line: var(--ink);
+  --error: #c2410c;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -26,6 +29,7 @@
     --muted: #bba993;
     --accent-ink: #1b1611;
     --shadow: 4px 4px 0 #000;
+    --error: #fb923c;
     color-scheme: dark;
   }
 }
@@ -37,7 +41,17 @@
   --muted: #bba993;
   --accent-ink: #1b1611;
   --shadow: 4px 4px 0 #000;
+  --error: #fb923c;
   color-scheme: dark;
+}
+
+/* The sign-in box, in the site's colors (light and dark). */
+slauth-sign-in {
+  --slauth-bg: var(--card);
+  --slauth-ink: var(--ink);
+  --slauth-accent: var(--accent);
+  --slauth-accent-ink: var(--accent-ink);
+  --slauth-error: var(--error);
 }
 
 * { box-sizing: border-box; }
