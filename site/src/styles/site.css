@@ -15,6 +15,9 @@
   --radius: 16px;
   --font: 'Bricolage Grotesque', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* The sloth's outer outline: ink on light, a cream sticker edge on dark. */
+  --sloth-line: var(--ink);
+  --error: #c2410c;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -26,6 +29,7 @@
     --muted: #bba993;
     --accent-ink: #1b1611;
     --shadow: 4px 4px 0 #000;
+    --error: #fb923c;
     color-scheme: dark;
   }
 }
@@ -37,7 +41,17 @@
   --muted: #bba993;
   --accent-ink: #1b1611;
   --shadow: 4px 4px 0 #000;
+  --error: #fb923c;
   color-scheme: dark;
+}
+
+/* The sign-in box, in the site's colors (light and dark). */
+slauth-sign-in {
+  --slauth-bg: var(--card);
+  --slauth-ink: var(--ink);
+  --slauth-accent: var(--accent);
+  --slauth-accent-ink: var(--accent-ink);
+  --slauth-error: var(--error);
 }
 
 * { box-sizing: border-box; }
@@ -99,3 +113,35 @@ section.block.tint { background: var(--bg-2); border-top: var(--line); border-bo
 .site-footer { border-top: var(--line); padding: 36px 0 48px; font-size: 15px; }
 .site-footer .wrap { display: flex; flex-wrap: wrap; gap: 24px; justify-content: space-between; align-items: center; }
 .site-footer nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* ---------- motion: small, slow, and off for anyone who asks ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  /* The hero sloth sways from its branch; every sloth blinks now and then. */
+  .sloth.hanging .body { transform-box: view-box; transform-origin: 110px 32px; animation: sway 7s ease-in-out infinite; }
+  .sloth.hanging .leaves ellipse { transform-box: fill-box; transform-origin: left center; animation: rustle 5s ease-in-out infinite; }
+  .sloth.hanging .leaves ellipse:nth-child(2) { animation-delay: -1.7s; }
+  .sloth.hanging .leaves ellipse:nth-child(3) { animation-delay: -3.1s; }
+  .sloth .eyes { transform-box: fill-box; transform-origin: center; animation: blink 6s infinite; }
+  .brand .sloth .eyes { animation-duration: 9s; }
+  .brand:hover .sloth { animation: wiggle 0.6s ease-in-out; }
+
+  /* The marker under "side projects" draws itself in. */
+  .highlight { background-repeat: no-repeat; background-size: 100% 100%; animation: marker 0.9s 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+  /* Things settle in as they scroll into view (only once JavaScript is here to show them). */
+  .motion .reveal { opacity: 0; transform: translateY(14px); }
+  .motion .reveal.in { opacity: 1; transform: none; transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); transition-delay: calc(var(--i, 0) * 70ms); }
+
+  .sticker { transition: transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1); }
+  .sticker:hover { transform: rotate(3deg) scale(1.06); }
+  .card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  a.card:hover, .grid .card:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+  .copy-pill { transition: transform 0.15s ease; }
+  .copy-pill:active { transform: scale(0.97); }
+}
+
+@keyframes sway { 0%, 100% { transform: rotate(-2.2deg); } 50% { transform: rotate(2.2deg); } }
+@keyframes rustle { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-6deg); } }
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+@keyframes wiggle { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-10deg); } 65% { transform: rotate(8deg); } }
+@keyframes marker { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }

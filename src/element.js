@@ -11,6 +11,8 @@ import { MESSAGES, STYLE, escape } from './ui.js'
  *   slauth-sign-in {
  *     --slauth-accent: #f59e0b;  --slauth-ink: #2b2118;  --slauth-bg: #fff;
  *     --slauth-radius: 14px;     --slauth-font: inherit;
+ *     --slauth-accent-ink: #2b2118;  (text on the accent; for dark themes)
+ *     --slauth-error: #c2410c;
  *   }
  *
  * Attributes: base-path (default /auth), app-name, redirect (where to go once signed in),

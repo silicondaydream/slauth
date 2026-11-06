@@ -33,7 +33,7 @@ document.querySelector('slauth-sign-in').addEventListener('slauth:signed-in', (e
 
 ## Theming
 
-Five CSS variables, plus `::part(card)` for anything else:
+Seven CSS variables, plus `::part(card)` for anything else:
 
 ```css
 slauth-sign-in {
@@ -42,6 +42,18 @@ slauth-sign-in {
   --slauth-bg: #ffffff;     /* the card */
   --slauth-radius: 10px;
   --slauth-font: inherit;
+  --slauth-accent-ink: #111827; /* text on accent buttons */
+  --slauth-error: #c2410c;
+}
+
+/* A dark theme: light ink on a dark card, dark text on the bright buttons. */
+@media (prefers-color-scheme: dark) {
+  slauth-sign-in, slauth-account {
+    --slauth-bg: #1f2937;
+    --slauth-ink: #f9fafb;
+    --slauth-accent-ink: #111827;
+    --slauth-error: #fb923c;
+  }
 }
 slauth-sign-in::part(card) {
   box-shadow: none;

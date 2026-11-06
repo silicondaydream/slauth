@@ -1,12 +1,17 @@
 ---
 import Sloth from '../components/Sloth.astro'
+import { NAME, OG_IMAGE, canonical, jsonLd, website } from '../lib/seo'
 import '../styles/site.css'
 
 interface Props {
   title: string
   description: string
+  /** Extra schema.org data for this page. */
+  schema?: object[]
+  noindex?: boolean
 }
-const { title, description } = Astro.props
+const { title, description, schema = [], noindex = false } = Astro.props
+const url = canonical(Astro.url.pathname)
 const path = Astro.url.pathname.replace(/\/$/, '') || '/'
 const nav = [
   { href: '/docs/', label: 'Docs' },
@@ -22,9 +27,24 @@ const nav = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={url} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={NAME} />
+    <meta property="og:url" content={url} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <meta property="og:image" content={OG_IMAGE} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="slauth: open-source auth you own. A sloth hanging from a branch." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={OG_IMAGE} />
+    <meta name="theme-color" content="#fdf6ec" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1b1611" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="alternate" type="text/plain" title="slauth for AI assistants" href="/llms.txt" />
+    {[website, ...schema].map((data) => <script type="application/ld+json" set:html={jsonLd(data)} />)}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -66,6 +86,48 @@ const nav = [
       </div>
     </footer>
     <script>
+      // Fade sections in as they scroll into view. Without JavaScript (or with reduced
+      // motion), everything is simply shown.
+      if (matchMedia('(prefers-reduced-motion: no-preference)').matches && 'IntersectionObserver' in window) {
+        const items = document.querySelectorAll('main section:not(.hero) :is(.section-head, .card, .code-card)')
+        const seen = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue
+              entry.target.classList.add('in')
+              seen.unobserve(entry.target)
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px' },
+        )
+        items.forEach((el) => {
+          const siblings = el.parentElement ? [...el.parentElement.children] : []
+          ;(el as HTMLElement).style.setProperty('--i', String(Math.min(siblings.indexOf(el), 5)))
+          el.classList.add('reveal')
+          // Once it's in, drop the classes so hover effects aren't slowed by the reveal's delay.
+          const done = (event: Event) => {
+            if (event.target !== el || !el.classList.contains('in')) return
+            el.classList.remove('reveal', 'in')
+            el.removeEventListener('transitionend', done)
+          }
+          el.addEventListener('transitionend', done)
+          seen.observe(el)
+        })
+        // Jumping past things (End, a #link) never "intersects" them: show anything above the fold.
+        let queued = false
+        const catchUp = () => {
+          queued = false
+          const left = document.querySelectorAll('.reveal:not(.in)')
+          if (!left.length) return removeEventListener('scroll', onScroll)
+          for (const el of left) if (el.getBoundingClientRect().top < innerHeight) el.classList.add('in')
+        }
+        const onScroll = () => {
+          if (!queued) (queued = true), requestAnimationFrame(catchUp)
+        }
+        addEventListener('scroll', onScroll, { passive: true })
+        document.documentElement.classList.add('motion')
+      }
+
       const button = document.getElementById('theme-toggle')
       button?.addEventListener('click', () => {
         const root = document.documentElement

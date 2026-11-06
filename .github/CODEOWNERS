@@ -1,0 +1,19 @@
+# Every change needs a code owner's review; security-sensitive paths are listed so
+# that stays true even if the default below is ever loosened. See CODE_POLICY.md §3.
+*                    @silicondaydream
+
+/src/core.js         @silicondaydream
+/src/session.js      @silicondaydream
+/src/tokens.js       @silicondaydream
+/src/password.js     @silicondaydream
+/src/two-factor.js   @silicondaydream
+/src/email-code.js   @silicondaydream
+/src/util.js         @silicondaydream
+/src/access.js       @silicondaydream
+/src/lock.js         @silicondaydream
+/src/oauth/          @silicondaydream
+/src/passkey/        @silicondaydream
+/src/routes/         @silicondaydream
+/.github/            @silicondaydream
+/package.json        @silicondaydream
+/pnpm-lock.yaml      @silicondaydream

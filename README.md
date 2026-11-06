@@ -87,4 +87,5 @@ SAML, SCIM, per-organization SSO, or a hosted dashboard you didn't build. For th
 | `examples/` | runnable apps |
 | `site/` | slauth.dev: Astro marketing pages + Starlight docs |
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). MIT licensed.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_POLICY.md](CODE_POLICY.md). Security
+reports: [SECURITY.md](SECURITY.md). MIT licensed.

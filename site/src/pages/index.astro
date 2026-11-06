@@ -2,6 +2,7 @@
 import { Code } from '@astrojs/starlight/components'
 import Site from '../layouts/Site.astro'
 import Sloth from '../components/Sloth.astro'
+import { software, sourceCode } from '../lib/seo'
 
 const snippet = `import { slauth } from 'slauthjs'
 import { d1 } from 'slauthjs/stores/d1'
@@ -46,7 +47,7 @@ const deeper = [
   { icon: '🎟️', title: 'JWTs for your APIs', body: 'Short-lived ES256 tokens your other services check against /auth/jwks.json. No shared secret.', href: '/docs/accounts/tokens/' },
 ]
 ---
-<Site title="slauth: auth for side projects, and what they grow into" description="Open-source auth you own. Email codes and passkeys in five minutes; providers, two-factor, organizations and JWTs when you need them. Your database, zero dependencies, runs anywhere.">
+<Site title="slauth: auth for side projects, and what they grow into" description="Open-source auth you own. Email codes and passkeys in five minutes; providers, two-factor, organizations and JWTs when you need them. Your database, zero dependencies, runs anywhere." schema={[software, sourceCode]}>
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">
@@ -254,7 +255,7 @@ const deeper = [
   .hero-demo { position: relative; display: grid; justify-items: center; }
   .hero-sloth { width: min(260px, 70%); height: auto; margin-bottom: -38px; position: relative; z-index: 1; }
   .demo-wrap { width: 100%; max-width: 360px; position: relative; z-index: 2; display: grid; gap: 14px; }
-  slauth-sign-in { --slauth-font: var(--font); --slauth-ink: #2b2118; }
+  slauth-sign-in { --slauth-font: var(--font); }
   .inbox { padding: 14px 16px; font-size: 15px; transform: rotate(1deg); background: #fff8d6; color: #2b2118; }
   .inbox p { margin: 4px 0 0; }
   .inbox code { font-weight: 700; font-size: 18px; letter-spacing: 2px; }
