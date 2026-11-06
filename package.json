@@ -75,7 +75,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
-    "prepublishOnly": "vitest run && tsc -p tsconfig.json"
+    "prepublishOnly": "vitest run && tsc -p tsconfig.json",
+    "smoke": "node test/smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
@@ -107,5 +108,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/silicondaydream/slauth.git"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "publishConfig": {
+    "access": "public"
   }
 }
