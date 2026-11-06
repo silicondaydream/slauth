@@ -1,6 +1,16 @@
 ---
 import Site from '../layouts/Site.astro'
 import Sloth from '../components/Sloth.astro'
+import { SITE } from '../lib/seo'
+
+const breadcrumbs = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'slauth', item: `${SITE}/` },
+    { '@type': 'ListItem', position: 2, name: 'Compare', item: `${SITE}/compare/` },
+  ],
+}
 
 const cols = ['Hard-coded password', 'slauth', 'Auth.js (NextAuth)', 'Clerk']
 type Cell = [mark: '✅' | '⚠️' | '❌' | '', text: string]
@@ -26,7 +36,7 @@ const rows: { label: string; cells: Cell[] }[] = [
   { label: 'Fun', cells: [['⚠️', 'Until it leaks'], ['✅', 'There is a sloth'], ['⚠️', 'Lots of config'], ['⚠️', 'Polished, corporate']] },
 ]
 ---
-<Site title="Compare · slauth" description="An honest comparison of slauth with a hard-coded password, Auth.js (NextAuth) and Clerk.">
+<Site title="slauth vs Auth.js (NextAuth) vs Clerk: an honest comparison" description="slauth compared with Auth.js (NextAuth), Clerk and a hard-coded password: providers, passkeys, two-factor, organizations, admin API, pricing, runtimes and where your users live." schema={[breadcrumbs]}>
   <section class="block">
     <div class="wrap">
       <div class="head">

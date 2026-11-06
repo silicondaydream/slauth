@@ -2,6 +2,7 @@
 import { Code } from '@astrojs/starlight/components'
 import Site from '../layouts/Site.astro'
 import Sloth from '../components/Sloth.astro'
+import { software, sourceCode } from '../lib/seo'
 
 const snippet = `import { slauth } from 'slauthjs'
 import { d1 } from 'slauthjs/stores/d1'
@@ -46,7 +47,7 @@ const deeper = [
   { icon: '🎟️', title: 'JWTs for your APIs', body: 'Short-lived ES256 tokens your other services check against /auth/jwks.json. No shared secret.', href: '/docs/accounts/tokens/' },
 ]
 ---
-<Site title="slauth: auth for side projects, and what they grow into" description="Open-source auth you own. Email codes and passkeys in five minutes; providers, two-factor, organizations and JWTs when you need them. Your database, zero dependencies, runs anywhere.">
+<Site title="slauth: auth for side projects, and what they grow into" description="Open-source auth you own. Email codes and passkeys in five minutes; providers, two-factor, organizations and JWTs when you need them. Your database, zero dependencies, runs anywhere." schema={[software, sourceCode]}>
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">
