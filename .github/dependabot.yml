@@ -1,0 +1,45 @@
+# Keeps the pinned action SHAs and dev dependencies current. New releases wait a week
+# (cooldown) so a compromised version has time to be noticed and pulled first.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      dev:
+        patterns: ['*']
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      site:
+        patterns: ['*']
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directories: [/examples/workers-d1, /examples/node-express]
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      examples:
+        patterns: ['*']

@@ -18,6 +18,7 @@ function fakeD1() {
         bind: (...args) => ((params = args), api),
         first: async () => stmt.get(...params) ?? null,
         run: async () => stmt.run(...params),
+        all: async () => ({ results: stmt.all(...params) }),
       }
       return api
     },
@@ -36,6 +37,13 @@ function fakeKv() {
     },
     put: async (key, value, opts) => void rows.set(key, { value, expires: opts?.expirationTtl ? Date.now() + opts.expirationTtl * 1000 : null }),
     delete: async (key) => void rows.delete(key),
+    // Like KV: sorted keys, pages, and a cursor until list_complete.
+    list: async ({ prefix, limit, cursor }) => {
+      const keys = [...rows.keys()].filter((k) => k.startsWith(prefix)).sort()
+      const start = cursor ? Number(cursor) : 0
+      const page = keys.slice(start, start + limit)
+      return { keys: page.map((name) => ({ name })), list_complete: start + limit >= keys.length, cursor: String(start + limit) }
+    },
   }
 }
 
@@ -67,6 +75,20 @@ for (const [name, make] of Object.entries(stores)) {
       vi.setSystemTime(Date.now() + 61_000)
       expect(await store.get('short')).toBeNull()
       expect(await store.get('forever')).toBe(2)
+    })
+
+    it('lists by prefix, a page at a time', async () => {
+      const store = make()
+      for (const key of ['user:c', 'user:a', 'user:b', 'email:a', 'userx']) await store.put(key, key)
+      await store.put('user:gone', 1, { ttl: 60 })
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(Date.now() + 61_000)
+      const first = await store.list('user:', { limit: 2 })
+      expect(first.items).toEqual([{ key: 'user:a', value: 'user:a' }, { key: 'user:b', value: 'user:b' }])
+      expect(first.cursor).toBeTruthy()
+      const second = await store.list('user:', { limit: 2, cursor: first.cursor })
+      expect(second.items.map((i) => i.key)).toEqual(['user:c'])
+      expect(second.cursor).toBeNull()
     })
   })
 }

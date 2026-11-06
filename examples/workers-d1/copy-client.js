@@ -6,5 +6,5 @@ import { createRequire } from 'node:module'
 
 const src = dirname(createRequire(import.meta.url).resolve('slauthjs/client'))
 mkdirSync('public/slauth', { recursive: true })
-for (const file of ['client.js', 'element.js']) cpSync(join(src, file), join('public/slauth', file))
+for (const file of ['client.js', 'ui.js', 'element.js', 'account-element.js']) cpSync(join(src, file), join('public/slauth', file))
 console.log('Copied the slauth browser files to public/slauth/')

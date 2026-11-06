@@ -73,6 +73,7 @@ The contract:
 - `get(key)` returns what was `put` (any JSON value), or `null`/`undefined` when there's nothing or it expired.
 - `put(key, value, { ttl })` stores a JSON value. `ttl` is in **seconds**; without it, keep the value forever.
 - `delete(key)` removes it (and doesn't mind if it isn't there).
+- Optionally, `list(prefix, { limit, cursor })` returns `{ items: [{ key, value }], cursor }`: live keys starting with `prefix`, in key order, a page at a time (`cursor` is `null` on the last page). Only `auth.users.list()` needs it, and every built-in store has it.
 
 Keys are short strings like `user:usr_…` and `session:…`. The full list is on the [storage keys](/docs/reference/storage-keys/) page. Expired entries must not come back from `get`; deleting them eventually is fine.
 

@@ -1,5 +1,9 @@
 # Contributing
 
+Before you start: [CODE_POLICY.md](CODE_POLICY.md) has the rules (zero dependencies, the
+security checklist, compatibility, docs in the same PR). Found a vulnerability? See
+[SECURITY.md](SECURITY.md), not the issue tracker.
+
 ## The library
 
 ```sh
@@ -26,6 +30,8 @@ cd ../.. && node test/e2e-browser.mjs examples/workers-d1/dev.log   # needs play
 
 ## The site (slauth.dev)
 
+The site needs Node 22.23 or newer (Astro's requirement); CI builds it on Node 24.
+
 ```sh
 cd site
 pnpm install
@@ -45,5 +51,16 @@ Starlight). When you change the library, change the docs in the same PR.
 
 1. The package is published as **`slauthjs`** (`slauth` was taken on npm). The library
    and the site are still called slauth.
-2. Bump `version` in `package.json`.
-3. `npm publish --access public`. `prepublishOnly` runs the tests and type check.
+2. Bump `version` in `package.json`, add a CHANGELOG entry, and merge that to `main`.
+3. Tag it: `git tag v2.0.1 && git push origin v2.0.1`. The
+   [Release workflow](.github/workflows/release.yml) checks the tag matches the version,
+   runs everything again, and publishes with npm trusted publishing after a reviewer
+   approves the `npm` environment. Nobody publishes from a laptop.
+
+## CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the tests and type check on
+Node 22 and 24, a no-install smoke test on Node 20, the site build with a link check, and
+[zizmor](https://docs.zizmor.sh) over the workflows themselves. Actions are pinned to
+commit SHAs; Dependabot updates them weekly. To run the smoke test yourself:
+`pnpm smoke`.
