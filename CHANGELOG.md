@@ -13,6 +13,9 @@
   403 with the new error code `challenge-failed`, and a check that throws counts as failed.
   `<slauth-sign-in>` shows a widget put in its `challenge` slot and sends the token
   along; `GET /auth/config` has a new `challenge` field.
+- **QR code for two-factor setup** in `<slauth-account>`: scan instead of typing the key.
+  The encoder (about 2 kB gzipped, no dependencies) loads only on that screen; style it
+  with `::part(qr)`.
 - **libSQL store** (`slauthjs/stores/libsql`): Turso and other libSQL databases through
   `@libsql/client`.
 

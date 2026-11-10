@@ -129,7 +129,7 @@ class SlauthAccount extends HTMLElement {
           recoveryCodes
             ? `<p>Save these recovery codes somewhere safe. Each one works once if you lose your phone.</p><div class="codes">${recoveryCodes.map((c) => `<span>${escape(c)}</span>`).join('')}</div><button class="ghost" data-on="codes-done">I've saved them</button>`
             : setup
-              ? `<p>Add this to your authenticator app (<a href="${escape(setup.uri)}">open in app</a>), or type the key:</p><p class="codes"><span>${escape(setup.secret.replace(/(.{4})/g, '$1 ').trim())}</span></p>
+              ? `<p>Scan this with your authenticator app (or <a href="${escape(setup.uri)}">open it in the app</a>):</p>${setup.qr ? `<div class="qr" part="qr">${setup.qr}</div>` : ''}<p>Or type the key:</p><p class="codes"><span>${escape(setup.secret.replace(/(.{4})/g, '$1 ').trim())}</span></p>
           <form data-on="enable-2fa"><label for="totp">Code from the app</label><input id="totp" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required /><button class="primary" ${off}>Turn on</button></form>`
               : d.twoFactor
                 ? `<p>On: signing in asks for a code from your authenticator app.</p>
@@ -206,7 +206,10 @@ class SlauthAccount extends HTMLElement {
     on('unlink', (id) => this.run(() => this.auth.accounts.unlink(id)))
     on('setup-2fa', () =>
       this.run(async () => {
-        this.ui.setup = await this.auth.twoFactor.setup()
+        const setup = await this.auth.twoFactor.setup()
+        // Loaded only here, so nobody else downloads the encoder. The key still works without it.
+        const qr = await import('./qr.js').then(({ qrSvg }) => qrSvg(setup.uri, { label: 'QR code for your authenticator app' })).catch(() => null)
+        this.ui.setup = { ...setup, qr }
       }),
     )
     on('enable-2fa', () => {

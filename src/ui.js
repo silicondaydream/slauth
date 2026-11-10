@@ -23,6 +23,8 @@ button, a.button { box-sizing: border-box; display: block; text-align: center; t
 .link { background: none; border: 0; padding: 4px; width: auto; display: inline; margin: 0; font-weight: 600; text-decoration: underline; opacity: .75; color: inherit; }
 button:disabled { opacity: .5; cursor: default; }
 .error { color: var(--slauth-error, #c2410c); font-size: 13px; font-weight: 600; min-height: 18px; margin: 8px 0 0; opacity: 1; }
+.qr { width: 188px; max-width: 100%; margin: 8px 0; padding: 0; border: 2px solid var(--slauth-ink, #2b2118); border-radius: 10px; overflow: hidden; line-height: 0; }
+.qr svg { width: 100%; height: auto; display: block; }
 .challenge { margin: 10px 0 2px; min-height: 0; }
 .row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .codes { font-family: ui-monospace, monospace; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 14px; margin: 0 0 12px; }
