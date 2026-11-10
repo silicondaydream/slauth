@@ -86,8 +86,11 @@ Vulnerabilities are reported privately: see [SECURITY.md](SECURITY.md).
 
 ## 6. Docs
 
-- **Docs change in the same PR as the code.** New options go on the Configuration page,
-  new routes on Routes, new error codes on Errors, new keys on Storage keys.
+- **Docs ship with the code.** The docs live in the site repository, so a PR here lists
+  what users will notice (new options, routes, error codes, storage keys) and a
+  maintainer lands the docs change before the release is tagged. New options go on the
+  Configuration page, new routes on Routes, new error codes on Errors, new keys on
+  Storage keys.
 - Docs are written for someone in a hurry: the code first, then why.
 - The `.d.ts` files are hand-written and are part of the docs; keep them in step.
 

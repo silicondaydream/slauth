@@ -28,24 +28,12 @@ npm run dev > dev.log &            # wait for it to start
 cd ../.. && node test/e2e-browser.mjs examples/workers-d1/dev.log   # needs playwright
 ```
 
-## The site (slauth.dev)
+## The docs (slauth.dev)
 
-The site needs Node 22.23 or newer (Astro's requirement); CI builds it on Node 24.
-
-```sh
-cd site
-pnpm install
-pnpm dev          # http://localhost:4321
-pnpm build        # static output in dist/
-pnpm run deploy   # wrangler deploy → the slauth-site Worker
-```
-
-The whole repo uses pnpm (the library and the site each have their own `pnpm-lock.yaml`).
-On Cloudflare Workers Builds, set the root directory to `site`, the build command to
-`pnpm run build` and the deploy command to `npx wrangler deploy`.
-
-Marketing pages are in `site/src/pages`, docs in `site/src/content/docs/docs` (Markdown,
-Starlight). When you change the library, change the docs in the same PR.
+The site and docs live in a separate, private repository, so a library change and its
+docs land as two PRs. Say in yours which options, routes, error codes or storage keys
+changed and a maintainer will update the docs before the release. Docs mistakes are
+welcome as issues here.
 
 ## Publishing to npm
 
@@ -60,7 +48,7 @@ Starlight). When you change the library, change the docs in the same PR.
 ## CI
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the tests and type check on
-Node 22 and 24, a no-install smoke test on Node 20, the site build with a link check, and
+Node 22 and 24, a no-install smoke test on Node 20, a package-contents check, and
 [zizmor](https://docs.zizmor.sh) over the workflows themselves. Actions are pinned to
 commit SHAs; Dependabot updates them weekly. To run the smoke test yourself:
 `pnpm smoke`.

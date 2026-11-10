@@ -64,34 +64,6 @@ jobs:
       # No install: the library has no dependencies, and this proves it.
       - run: node test/smoke.mjs
 
-  site:
-    name: Site (slauth.dev)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    defaults:
-      run:
-        working-directory: site
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-        with:
-          package_json_file: site/package.json
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: site/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - name: Every /docs link resolves
-        run: |
-          broken=$(grep -rhoE 'href="/docs/[^"#]*' dist | sort -u | sed 's/href="//' | while read -r p; do [ -f "dist${p%/}/index.html" ] || [ -f "dist$p" ] || echo "$p"; done)
-          if [ -n "$broken" ]; then echo "Broken links:"; echo "$broken"; exit 1; fi
-
   dependency-review:
     name: Dependency review
     # Needs GitHub's dependency graph: free on public repositories, GitHub Code Security on private ones.

@@ -85,7 +85,9 @@ SAML, SCIM, per-organization SSO, or a hosted dashboard you didn't build. For th
 | `src/` | the library (plain ESM + `.d.ts`) |
 | `test/` | test helpers, a simulated passkey authenticator, type checks, a browser test |
 | `examples/` | runnable apps |
-| `site/` | slauth.dev: Astro marketing pages + Starlight docs |
+
+The site and docs (slauth.dev) live in a separate repository. Spotted a docs mistake?
+[Open an issue](https://github.com/silicondaydream/slauth/issues) here.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_POLICY.md](CODE_POLICY.md). Security
 reports: [SECURITY.md](SECURITY.md). MIT licensed.
