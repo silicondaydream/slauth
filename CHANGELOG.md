@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased (2.1)
+
+### New
+
+- **Postgres store** (`slauthjs/stores/postgres`): Neon, Supabase, Hyperdrive or any
+  Postgres. Takes a node-postgres `Pool`/`Client`, PGlite, Neon's serverless driver,
+  postgres.js, or a `(text, params) => rows` function. Makes its own `slauth_kv` table.
+- **libSQL store** (`slauthjs/stores/libsql`): Turso and other libSQL databases through
+  `@libsql/client`.
+
 ## 2.0.0
 
 slauth keeps its five-minute start and now goes as deep as a project needs. Everything

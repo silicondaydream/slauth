@@ -3,6 +3,9 @@ import { slauth, memory, createLock, type SlauthUser } from 'slauthjs'
 import { d1 } from 'slauthjs/stores/d1'
 import { kv } from 'slauthjs/stores/kv'
 import { sqlite } from 'slauthjs/stores/sqlite'
+import { postgres } from 'slauthjs/stores/postgres'
+import { libsql } from 'slauthjs/stores/libsql'
+import { createClient as createLibsql } from '@libsql/client'
 import { resend } from 'slauthjs/email/resend'
 import { cloudflareEmail } from 'slauthjs/email/cloudflare'
 import { consoleEmail } from 'slauthjs/email/console'
@@ -12,6 +15,8 @@ import 'slauthjs/element'
 
 declare const env: { DB: { prepare(sql: string): unknown }; KV: Parameters<typeof kv>[0]; EMAIL: Parameters<typeof cloudflareEmail>[0] }
 declare const db: Parameters<typeof sqlite>[0]
+/** The shape of a node-postgres Pool. */
+declare const pool: { query(text: string, params: unknown[]): Promise<{ rows: any[]; rowCount: number | null }> }
 
 const auth = slauth({
   secret: 'x'.repeat(32),
@@ -24,6 +29,9 @@ const auth = slauth({
 slauth({ secret: 'x'.repeat(32), store: memory(), email: consoleEmail() })
 slauth({ secret: 'x'.repeat(32), store: kv(env.KV), email: cloudflareEmail(env.EMAIL, { from: 'hi@app.dev' }), access: { team: 't', aud: 'a' } })
 slauth({ secret: 'x'.repeat(32), store: sqlite(db), lock: true, passkeys: false })
+slauth({ secret: 'x'.repeat(32), store: postgres(pool) })
+slauth({ secret: 'x'.repeat(32), store: postgres(async (text: string, params: unknown[]) => [{ text, params }]) })
+slauth({ secret: 'x'.repeat(32), store: libsql(createLibsql({ url: ':memory:' })) })
 
 export async function handler(request: Request): Promise<Response> {
   if (new URL(request.url).pathname.startsWith('/auth/')) return auth.handle(request)

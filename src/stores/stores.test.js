@@ -1,8 +1,12 @@
+import { PGlite } from '@electric-sql/pglite'
+import { createClient } from '@libsql/client'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { d1 } from './d1.js'
 import { kv } from './kv.js'
+import { libsql } from './libsql.js'
 import { memory } from './memory.js'
+import { postgres } from './postgres.js'
 import { sqlite } from './sqlite.js'
 
 afterEach(() => vi.useRealTimers())
@@ -47,11 +51,25 @@ function fakeKv() {
   }
 }
 
+// PGlite takes a second to start, so the Postgres tests share one, a table each.
+let shared
+const pg = () => (shared ??= new PGlite())
+let tables = 0
+const table = () => `slauth_kv_${++tables}`
+
 const stores = {
   memory: () => memory(),
   d1: () => d1(fakeD1()),
   kv: () => kv(fakeKv()),
   sqlite: () => sqlite(new DatabaseSync(':memory:')),
+  // A real Postgres (PGlite), through the pg-style .query() → { rows }...
+  postgres: () => postgres(pg(), { table: table() }),
+  // ...and through the (text, params) → rows shape of Neon's serverless driver.
+  'postgres (function)': () => {
+    const db = pg()
+    return postgres(async (text, params) => (await db.query(text, params)).rows, { table: table() })
+  },
+  libsql: () => libsql(createClient({ url: ':memory:' })),
 }
 
 for (const [name, make] of Object.entries(stores)) {
@@ -103,6 +121,23 @@ describe('store details', () => {
   it('refuses odd table names', () => {
     expect(() => d1(fakeD1(), { table: 'x; DROP TABLE y' })).toThrow()
     expect(() => sqlite(new DatabaseSync(':memory:'), { table: 'bad name' })).toThrow()
+    expect(() => postgres(async () => [], { table: 'x"y' })).toThrow()
+    expect(() => libsql(createClient({ url: ':memory:' }), { table: '1x' })).toThrow()
+  })
+
+  it('postgres takes postgres.js and refuses things it cannot run', async () => {
+    const db = pg()
+    const sql = Object.assign(() => {}, { unsafe: async (text, params) => (await db.query(text, params)).rows })
+    const store = postgres(sql, { table: table() })
+    await store.put('a', { n: 1 })
+    expect(await store.get('a')).toEqual({ n: 1 })
+    expect(() => postgres({})).toThrow(/query/)
+  })
+
+  it('postgres lists by bytes, whatever the collation', async () => {
+    const store = postgres(pg(), { table: table() })
+    for (const key of ['user:B', 'user:a', 'user:_', 'user:Z']) await store.put(key, 1)
+    expect((await store.list('user:')).items.map((i) => i.key)).toEqual(['user:B', 'user:Z', 'user:_', 'user:a'])
   })
 
   it('memory hands out copies, not its own objects', async () => {
