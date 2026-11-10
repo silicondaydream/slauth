@@ -6,8 +6,19 @@ import { escapeHtml } from '../util.js'
  *   sign-in       a 6-digit code (and a link, with magicLinks on)
  *   email-change  a code to confirm a new address
  *   invite        an invitation to join an organization
+ *   new-sign-in   a sign-in from a browser the account hasn't used (newSignInEmails)
  */
-export function defaultMessage(kind, { code, link, appName, minutes, orgName, inviter }) {
+export function defaultMessage(kind, { code, link, appName, minutes, orgName, inviter, device, when }) {
+  if (kind === 'new-sign-in') {
+    return box({
+      subject: `New sign-in to ${appName} from ${device}`,
+      lines: [`Your <strong>${escapeHtml(appName)}</strong> account was just signed in to from <strong>${escapeHtml(device)}</strong> (${escapeHtml(when)}).`, 'If that was you, there\'s nothing to do.'],
+      textLines: [`Your ${appName} account was just signed in to from ${device} (${when}).`, "If that was you, there's nothing to do."],
+      link,
+      linkLabel: 'See your signed-in devices',
+      footer: "If it wasn't you, sign in, end that session from your account page, and turn on two-factor sign-in or a passkey.",
+    })
+  }
   if (kind === 'email-change') {
     return box({
       subject: `${code} is your code to confirm this email for ${appName}`,

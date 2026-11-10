@@ -16,6 +16,12 @@
 - **QR code for two-factor setup** in `<slauth-account>`: scan instead of typing the key.
   The encoder (about 2 kB gzipped, no dependencies) loads only on that screen; style it
   with `::part(qr)`.
+- **New sign-in emails** (`newSignInEmails`): an email when an account signs in from a
+  browser and OS family it hasn't used before ("Safari on iOS"). Opt-in; brand-new
+  accounts aren't emailed, and a failed email never fails the sign-in. Pass
+  `{ accountPage: '/account' }` to link to the device list. New email kind `new-sign-in`
+  (your `emails()` and sender get `device`, `method` and `when`), new storage key
+  `devices:<userId>`.
 - **libSQL store** (`slauthjs/stores/libsql`): Turso and other libSQL databases through
   `@libsql/client`.
 

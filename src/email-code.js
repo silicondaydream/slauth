@@ -61,7 +61,9 @@ export function createEmailCodes({ store, secret, sender, appName, message }) {
   async function send({ kind, to, code, link, ...details }) {
     const data = { code, link, appName, ...details }
     const built = (message && (await message(kind, data))) || defaultMessage(kind, data)
-    await sender.send({ to, code, link, appName, kind, ...built })
+    // New-sign-in emails also tell your sender which device it was.
+    const about = kind === 'new-sign-in' ? { device: details.device, method: details.method, when: details.when } : {}
+    await sender.send({ to, code, link, appName, kind, ...about, ...built })
   }
 }
 

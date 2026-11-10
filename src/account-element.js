@@ -1,4 +1,5 @@
 import { createClient } from './client.js'
+import { device } from './device.js'
 import { MESSAGES, STYLE, escape } from './ui.js'
 
 /**
@@ -232,14 +233,6 @@ class SlauthAccount extends HTMLElement {
     on('edit-delete', () => edit('delete'))
     on('delete', () => this.run(async () => (await this.auth.user.delete(), this.leave())))
   }
-}
-
-/** "Chrome on macOS" from a user agent, roughly. */
-function device(ua) {
-  if (!ua) return 'Unknown device'
-  const browser = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'A browser'
-  const os = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac OS X/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : ''
-  return os ? `${browser} on ${os}` : browser
 }
 
 if (typeof customElements !== 'undefined' && !customElements.get('slauth-account')) {

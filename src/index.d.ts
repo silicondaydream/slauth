@@ -8,11 +8,11 @@ export interface Store {
   list?(prefix: string, options?: { limit?: number; cursor?: string | null }): Promise<{ items: { key: string; value: any }[]; cursor: string | null }>
 }
 
-export type EmailKind = 'sign-in' | 'email-change' | 'invite'
+export type EmailKind = 'sign-in' | 'email-change' | 'invite' | 'new-sign-in'
 
 /** Sends slauth's emails. `subject`, `text` and `html` are ready to use. */
 export interface EmailSender {
-  send(message: { to: string; kind: EmailKind; code?: string; link?: string; appName: string; subject: string; text: string; html: string }): Promise<void>
+  send(message: { to: string; kind: EmailKind; code?: string; link?: string; appName: string; subject: string; text: string; html: string; device?: string; method?: string; when?: string }): Promise<void>
 }
 
 /** What the browser, auth.user() and your event handlers see. */
@@ -86,7 +86,7 @@ export interface SlauthConfig {
   /** How codes are emailed. Defaults to printing them to the console. */
   email?: EmailSender
   /** Your own wording for the emails. Return null to keep slauth's. */
-  emails?: (kind: EmailKind, data: { code?: string; link?: string; appName: string; minutes?: number; orgName?: string; inviter?: string }) => { subject: string; text: string; html: string } | null | Promise<{ subject: string; text: string; html: string } | null>
+  emails?: (kind: EmailKind, data: { code?: string; link?: string; appName: string; minutes?: number; orgName?: string; inviter?: string; device?: string; method?: string; when?: string }) => { subject: string; text: string; html: string } | null | Promise<{ subject: string; text: string; html: string } | null>
   /** Shown in emails and as the passkey's site name. */
   appName?: string
   /** Who may sign in: a list of emails ("@family.com" for a whole domain) or a function. Everyone, if left out. */
@@ -137,6 +137,11 @@ export interface SlauthConfig {
   rateLimit?: false | { limits?: Record<string, [requests: number, seconds: number]>; ip?: (request: Request) => string | null }
   /** Let people delete their own account at POST /auth/user/delete. Default true. */
   allowDeletion?: boolean
+  /**
+   * Email people when their account signs in from a browser and OS it hasn't used before
+   * ("Chrome on Windows"). `accountPage` is where the email's link goes, e.g. "/account".
+   */
+  newSignInEmails?: boolean | { accountPage?: string }
   /** Things to do when people sign up, sign in, and so on. */
   on?: SlauthEvents
   /** For providers' HTTP calls; handy in tests. */

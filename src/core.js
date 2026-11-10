@@ -3,6 +3,7 @@ import { createChallenge } from './challenge.js'
 import { createEmailCodes } from './email-code.js'
 import { consoleEmail } from './email/console.js'
 import { createLock } from './lock.js'
+import { createNewSignIns } from './new-sign-in.js'
 import { createOAuthFlow } from './oauth/flow.js'
 import { createOrgs, OrgError } from './orgs.js'
 import { PasskeyError } from './passkey/webauthn.js'
@@ -81,6 +82,7 @@ export function slauth(config) {
   const twoFactorOptions = option(config.twoFactor)
   const tokenOptions = option(config.tokens)
   const orgOptions = option(config.organizations, { allowCreate: true })
+  const newSignInOptions = option(config.newSignInEmails)
 
   const users = createUsers(store, allow)
   const sessions = createSessions({ store, cookie, days: sessionDays })
@@ -91,6 +93,7 @@ export function slauth(config) {
   const twoFactor = twoFactorOptions ? createTwoFactor({ store, issuer: twoFactorOptions.issuer ?? appName }) : null
   const tokens = tokenOptions ? createTokens({ store, secret, ...tokenOptions }) : null
   const orgs = orgOptions ? createOrgs(store) : null
+  const newSignIns = newSignInOptions ? createNewSignIns({ store, codes, sessions, accountPage: newSignInOptions.accountPage }) : null
   const oauth = createOAuthFlow({ store, fetch: config.fetch })
   const access = config.access ? createAccess({ teamDomain: config.access.team, audience: config.access.aud, devUser: config.access.devUser, fetch: config.access.fetch }) : null
   const lock = config.lock
@@ -173,18 +176,25 @@ export function slauth(config) {
    */
   async function complete(found, request, { method }) {
     if (found.bannedAt) return { kind: 'refused', status: 403, code: 'banned', error: "This account can't sign in." }
+    const isNew = Boolean(found.isNew)
     if (found.isNew) {
       delete found.isNew
       await emit('signUp', { user: publicUser(found), method, request })
     }
     if (twoFactor && method !== 'passkey' && (await twoFactor.enabled(found.id))) {
       const token = randomToken()
-      await store.put(`2fa:${base64Url(await sha256(token))}`, { userId: found.id, method, tries: 0 }, { ttl: PENDING_SECONDS })
+      await store.put(`2fa:${base64Url(await sha256(token))}`, { userId: found.id, method, tries: 0, isNew }, { ttl: PENDING_SECONDS })
       return { kind: 'two-factor', token, cookie: serializeCookie(PENDING_COOKIE, token, { maxAge: PENDING_SECONDS, secure: isSecure(request) }) }
     }
     const made = await sessions.create(found.id, request, { method })
+    await noticeSignIn(found, request, { method, sessionId: made.id, isNew })
     await emit('signIn', { user: publicUser(found), method, request })
     return { kind: 'session', user: publicUser(found), cookie: made.cookie, token: made.token }
+  }
+
+  /** With newSignInEmails on: an email when this is a browser and OS the account hasn't used. */
+  async function noticeSignIn(found, request, { method, sessionId, isNew = false }) {
+    if (newSignIns) await newSignIns(found, request, { method, sessionId, isNew, origin: app.origin(new URL(request.url)) })
   }
 
   /** The JSON answer for a sign-in route: a cookie for browsers, or the token for apps that asked for one. */
@@ -233,6 +243,7 @@ export function slauth(config) {
     reply,
     pending,
     emit,
+    noticeSignIn,
     deleteUser,
     pendingCookie: PENDING_COOKIE,
     /** Where links in emails and provider callbacks point. */
@@ -306,7 +317,7 @@ export function slauth(config) {
     for (const pk of (await store.get(`passkeys:${id}`)) ?? []) await store.delete(`passkey:${pk}`)
     await store.delete(`passkeys:${id}`)
     for (const key of (await store.get(`accounts:${id}`)) ?? []) await store.delete(`account:${key}`)
-    for (const key of [`accounts:${id}`, `password:${id}`, `totp:${id}`, `lock:${id}`]) await store.delete(key)
+    for (const key of [`accounts:${id}`, `password:${id}`, `totp:${id}`, `lock:${id}`, `devices:${id}`]) await store.delete(key)
     if (orgs) await orgs.forget(id)
     await users.remove(found)
     await emit('userDeleted', { user: publicUser(found) })

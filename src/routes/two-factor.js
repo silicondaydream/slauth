@@ -50,6 +50,7 @@ export function twoFactorRoutes(app) {
       const found = await users.byId(pending.userId)
       if (!found || found.bannedAt) return json({ error: "This account can't sign in.", code: 'banned' }, 403, { 'Set-Cookie': clearPending })
       const made = await app.sessions.create(found.id, request, { method: `${pending.method}+totp` })
+      await app.noticeSignIn(found, request, { method: pending.method, sessionId: made.id, isNew: pending.isNew })
       await app.emit('signIn', { user: publicUser(found), method: pending.method, request })
       const extra = input.recoveryCode ? { recoveryCodesLeft: await twoFactor.recoveryLeft(found.id) } : {}
       if (request.headers.get('x-slauth-transport') === 'bearer') return json({ user: publicUser(found), token: made.token, ...extra })

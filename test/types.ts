@@ -30,6 +30,7 @@ const auth = slauth({
 slauth({ secret: 'x'.repeat(32), store: memory(), email: consoleEmail() })
 slauth({ secret: 'x'.repeat(32), store: memory(), challenge: turnstile({ secret: 's', hostname: 'app.dev' }) })
 slauth({ secret: 'x'.repeat(32), store: memory(), challenge: hcaptcha({ secret: 's' }) })
+slauth({ secret: 'x'.repeat(32), store: memory(), newSignInEmails: { accountPage: '/account' }, emails: (kind, { device }) => (kind === 'new-sign-in' ? { subject: `New: ${device}`, text: '', html: '' } : null) })
 slauth({ secret: 'x'.repeat(32), store: memory(), challenge: async (_request, token, { route }) => token === 'ok' && route !== 'password/signin' })
 slauth({ secret: 'x'.repeat(32), store: kv(env.KV), email: cloudflareEmail(env.EMAIL, { from: 'hi@app.dev' }), access: { team: 't', aud: 'a' } })
 slauth({ secret: 'x'.repeat(32), store: sqlite(db), lock: true, passkeys: false })
