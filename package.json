@@ -19,6 +19,10 @@
       "types": "./src/providers.d.ts",
       "default": "./src/providers.js"
     },
+    "./challenge": {
+      "types": "./src/challenge.d.ts",
+      "default": "./src/challenge.js"
+    },
     "./element": {
       "types": "./src/element.d.ts",
       "default": "./src/element.js"

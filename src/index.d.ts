@@ -127,6 +127,12 @@ export interface SlauthConfig {
   tokens?: boolean | { minutes?: number; issuer?: string; audience?: string; claims?: (user: SlauthUser) => Record<string, unknown> | Promise<Record<string, unknown>> }
   /** Teams with members, roles and email invitations. */
   organizations?: boolean | { allowCreate?: boolean | ((user: SlauthUser) => boolean | Promise<boolean>); invitePage?: string }
+  /**
+   * A bot check on email/start, password/signup and password/signin: turnstile() or
+   * hcaptcha() from 'slauthjs/challenge', or your own. Gets the `challenge` token the
+   * browser sent; return true to let it through.
+   */
+  challenge?: (request: Request, token: string | null, context: { route: 'email/start' | 'password/signup' | 'password/signin' }) => boolean | Promise<boolean>
   /** Per-IP limits on code, password and two-factor routes; false to turn off. */
   rateLimit?: false | { limits?: Record<string, [requests: number, seconds: number]>; ip?: (request: Request) => string | null }
   /** Let people delete their own account at POST /auth/user/delete. Default true. */

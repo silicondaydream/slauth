@@ -112,7 +112,7 @@ export function createClient({ basePath = '/auth', fetch: doFetch = (...args) =>
       },
     },
     password: {
-      signIn: (email, password) => signIn('password/signin', { email, password }),
+      signIn: (email, password, options = {}) => signIn('password/signin', { email, password, ...options }),
       /** Emails a code; once it's used (email.verify) the password is saved. */
       signUp: (email, password, options = {}) => call('password/signup', { email, password, ...options }),
       set: (password, current) => call('password/set', { password, current }),

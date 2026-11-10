@@ -23,6 +23,7 @@ button, a.button { box-sizing: border-box; display: block; text-align: center; t
 .link { background: none; border: 0; padding: 4px; width: auto; display: inline; margin: 0; font-weight: 600; text-decoration: underline; opacity: .75; color: inherit; }
 button:disabled { opacity: .5; cursor: default; }
 .error { color: var(--slauth-error, #c2410c); font-size: 13px; font-weight: 600; min-height: 18px; margin: 8px 0 0; opacity: 1; }
+.challenge { margin: 10px 0 2px; min-height: 0; }
 .row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .codes { font-family: ui-monospace, monospace; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 14px; margin: 0 0 12px; }
 .list { list-style: none; padding: 0; margin: 0 0 8px; }
@@ -42,6 +43,7 @@ export const MESSAGES = {
   banned: "This account can't sign in.",
   'signed-out': 'Please sign in first.',
   'reauth-required': 'Please sign in again to do that.',
+  'challenge-failed': 'Please complete the check and try again.',
 }
 
 export function escape(text) {

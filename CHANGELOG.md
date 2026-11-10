@@ -7,6 +7,12 @@
 - **Postgres store** (`slauthjs/stores/postgres`): Neon, Supabase, Hyperdrive or any
   Postgres. Takes a node-postgres `Pool`/`Client`, PGlite, Neon's serverless driver,
   postgres.js, or a `(text, params) => rows` function. Makes its own `slauth_kv` table.
+- **Bot checks** (`challenge`): Turnstile, hCaptcha or your own check on `email/start`,
+  `password/signup` and `password/signin`. `turnstile({ secret })` and
+  `hcaptcha({ secret })` come from `slauthjs/challenge`. A missing or failed token gets a
+  403 with the new error code `challenge-failed`, and a check that throws counts as failed.
+  `<slauth-sign-in>` shows a widget put in its `challenge` slot and sends the token
+  along; `GET /auth/config` has a new `challenge` field.
 - **libSQL store** (`slauthjs/stores/libsql`): Turso and other libSQL databases through
   `@libsql/client`.
 

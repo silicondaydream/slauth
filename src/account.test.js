@@ -242,6 +242,7 @@ describe('config route', () => {
       twoFactor: false,
       organizations: false,
       providers: [],
+      challenge: false,
     })
   })
 })

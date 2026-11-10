@@ -20,6 +20,13 @@ import { MESSAGES, STYLE, escape } from './ui.js'
  * button or offer).
  * Fires `slauth:signed-in` with `{ detail: { user } }`.
  *
+ * Bot checks: with `challenge` on in the server config, put the widget inside the box
+ * and it's shown above the button and its token sent along:
+ *
+ *   <slauth-sign-in><div slot="challenge" class="cf-turnstile" data-sitekey="…"></div></slauth-sign-in>
+ *
+ * Or set `element.challenge = async () => token` for any other widget.
+ *
  *   import 'slauthjs/element'
  *   <slauth-sign-in app-name="Planda" redirect="/"></slauth-sign-in>
  */
@@ -75,6 +82,7 @@ class SlauthSignIn extends HTMLElement {
     } catch (error) {
       this.set({ error: MESSAGES[error.code] ?? error.message ?? 'Something went wrong.' })
     } finally {
+      this.resetChallenge()
       if (this.isConnected) this.set({ busy: false })
     }
   }
@@ -97,6 +105,26 @@ class SlauthSignIn extends HTMLElement {
     if (to) window.location.assign(to)
   }
 
+  /** The bot-check token: from `element.challenge`, or the Turnstile/hCaptcha widget inside the box. */
+  async token() {
+    if (!this.config.challenge) return {}
+    if (typeof this.challenge === 'function') return { challenge: (await this.challenge()) || undefined }
+    const field = this.querySelector('[name="cf-turnstile-response"], [name="h-captcha-response"]')
+    return { challenge: field?.value || undefined }
+  }
+
+  /** Tokens work once: get the widget ready for the next try. */
+  resetChallenge() {
+    if (!this.config.challenge || typeof this.challenge === 'function') return
+    const widget = this.querySelector('[slot="challenge"]')
+    try {
+      if (window.turnstile && widget) window.turnstile.reset(widget)
+      else if (window.hcaptcha) window.hcaptcha.reset()
+    } catch {
+      // A widget that isn't ready yet has nothing to reset.
+    }
+  }
+
   passkeys() {
     return !this.hasAttribute('no-passkeys') && this.config.passkeys !== false && this.auth.passkey.supported()
   }
@@ -107,6 +135,7 @@ class SlauthSignIn extends HTMLElement {
     const app = this.appName || (this.config.appName !== 'your app' ? (this.config.appName ?? '') : '')
     const name = app ? ` to ${escape(app)}` : ''
     const off = busy ? 'disabled' : ''
+    const check = this.config.challenge ? '<div class="challenge"><slot name="challenge"></slot></div>' : ''
     const redirect = this.getAttribute('redirect') ?? window.location.pathname + window.location.search
     const providerButtons = providers.length
       ? `<div class="providers">${providers.map((p) => `<a class="button" part="provider" href="${escape(this.auth.oauth.url(p.id, { redirect }))}">Continue with ${escape(p.name)}</a>`).join('')}</div><div class="or">or</div>`
@@ -120,6 +149,7 @@ class SlauthSignIn extends HTMLElement {
         <form data-on="email">
           <label for="email">Email</label>
           <input id="email" type="email" autocomplete="email webauthn" required value="${escape(email)}" />
+          ${check}
           <button class="primary" ${off}>Email me a code</button>
         </form>
         ${this.passkeys() ? `<button class="ghost dashed" data-on="passkey" ${off}>Sign in with a passkey</button>` : ''}
@@ -132,6 +162,7 @@ class SlauthSignIn extends HTMLElement {
           <input id="email" type="email" autocomplete="username webauthn" required value="${escape(email)}" />
           <label for="password">Password</label>
           <input id="password" type="password" autocomplete="current-password" required />
+          ${check}
           <button class="primary" ${off}>Sign in</button>
         </form>
         <div class="row"><button class="link" data-on="mode-code">Email me a code instead</button><button class="link" data-on="mode-code">Forgot password?</button></div>`,
@@ -143,6 +174,7 @@ class SlauthSignIn extends HTMLElement {
           <input id="email" type="email" autocomplete="email" required value="${escape(email)}" />
           <label for="password">Password</label>
           <input id="password" type="password" autocomplete="new-password" minlength="8" required />
+          ${check}
           <button class="primary" ${off}>Create account</button>
         </form>
         <div class="row"><button class="link" data-on="mode-password">I have an account</button></div>`,
@@ -158,6 +190,7 @@ class SlauthSignIn extends HTMLElement {
           <input id="code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required />
           <button class="primary" ${off}>${mode === 'sign-up' ? 'Create account' : 'Sign in'}</button>
         </form>
+        ${check}
         <div class="row"><button class="link" data-on="back">Use another email</button><button class="link" data-on="resend">Send again</button></div>`,
       'two-factor': recovery
         ? `
@@ -200,7 +233,7 @@ class SlauthSignIn extends HTMLElement {
       const typed = value('email').trim()
       this.set({ email: typed })
       return this.run(async () => {
-        await this.auth.email.start(typed, { redirect: this.getAttribute('redirect') ?? undefined })
+        await this.auth.email.start(typed, { redirect: this.getAttribute('redirect') ?? undefined, ...(await this.token()) })
         this.set({ step: 'code' })
         this.shadowRoot.getElementById('code')?.focus()
       })
@@ -209,14 +242,14 @@ class SlauthSignIn extends HTMLElement {
       const typed = value('email').trim()
       const password = value('password')
       this.set({ email: typed })
-      return this.run(async () => this.signedIn(await this.auth.password.signIn(typed, password)))
+      return this.run(async () => this.signedIn(await this.auth.password.signIn(typed, password, await this.token())))
     })
     on('sign-up', () => {
       const typed = value('email').trim()
       const password = value('password')
       this.set({ email: typed })
       return this.run(async () => {
-        await this.auth.password.signUp(typed, password)
+        await this.auth.password.signUp(typed, password, await this.token())
         this.set({ step: 'code' })
       })
     })
@@ -235,7 +268,7 @@ class SlauthSignIn extends HTMLElement {
     on('use-recovery', () => this.set({ recovery: true, error: '' }))
     on('use-app', () => this.set({ recovery: false, error: '' }))
     on('back', () => this.set({ step: 'email', error: '' }))
-    on('resend', () => this.run(() => this.auth.email.start(email)))
+    on('resend', () => this.run(async () => this.auth.email.start(email, await this.token())))
     on('add', () =>
       this.run(async () => {
         await this.auth.passkey.register()

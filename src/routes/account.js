@@ -36,6 +36,7 @@ export function accountRoutes(app) {
         twoFactor: Boolean(app.twoFactor),
         organizations: Boolean(app.orgs),
         providers: app.providers.map((p) => ({ id: p.id, name: p.name })),
+        challenge: Boolean(app.config.challenge),
       })
     }
 

@@ -1,4 +1,5 @@
 import { createAccess } from './access.js'
+import { createChallenge } from './challenge.js'
 import { createEmailCodes } from './email-code.js'
 import { consoleEmail } from './email/console.js'
 import { createLock } from './lock.js'
@@ -85,6 +86,7 @@ export function slauth(config) {
   const sessions = createSessions({ store, cookie, days: sessionDays })
   const codes = createEmailCodes({ store, secret, sender, appName, message: config.emails })
   const limits = createRateLimit(store, config.rateLimit)
+  const challenge = createChallenge(config.challenge)
   const passwords = passwordOptions ? createPasswords({ store, ...passwordOptions }) : null
   const twoFactor = twoFactorOptions ? createTwoFactor({ store, issuer: twoFactorOptions.issuer ?? appName }) : null
   const tokens = tokenOptions ? createTokens({ store, secret, ...tokenOptions }) : null
@@ -213,6 +215,7 @@ export function slauth(config) {
     sessions,
     codes,
     limits,
+    challenge,
     passwords,
     twoFactor,
     tokens,

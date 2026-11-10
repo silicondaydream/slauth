@@ -14,7 +14,7 @@ const MESSAGES = { expired: 'That code has expired. Ask for a new one.', 'too-ma
  * @param {object} app  the shared context from core.js
  */
 export function emailRoutes(app) {
-  const { store, users, codes, limits } = app
+  const { store, users, codes, limits, challenge } = app
   const notAllowed = () => json({ error: "That email isn't on the list for this app.", code: 'not-allowed' }, 403)
   const badEmail = () => json({ error: "That doesn't look like an email address.", code: 'bad-email' }, 400)
   const slowDown = (retryAfter) => json({ error: `Please wait ${retryAfter}s before trying again.`, code: 'slow-down', retryAfter }, 429)
@@ -44,6 +44,8 @@ export function emailRoutes(app) {
       if (!validEmail(email)) return badEmail()
       const wait = await limits.check('email/start', request)
       if (wait) return slowDown(wait)
+      const refused = await challenge(route, request, input)
+      if (refused) return refused
       if (!(await users.allowed(email, { method: 'email' }))) return notAllowed()
       const sent = await sendSignInCode(email, url, input.redirect)
       if (!sent.ok) return slowDown(sent.retryAfter)

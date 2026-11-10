@@ -12,7 +12,7 @@ import { json } from '../util.js'
  * @param {object} app  the shared context from core.js
  */
 export function passwordRoutes(app) {
-  const { store, users, passwords, limits } = app
+  const { store, users, passwords, limits, challenge } = app
 
   return async function route({ route, method, request, url, body }) {
     if (!route.startsWith('password/')) return
@@ -25,6 +25,8 @@ export function passwordRoutes(app) {
       if (!validEmail(email)) return json({ error: "That doesn't look like an email address.", code: 'bad-email' }, 400)
       const wait = await limits.check('password/signin', request)
       if (wait) return json({ error: `Too many tries. Please wait ${wait}s.`, code: 'slow-down', retryAfter: wait }, 429)
+      const refused = await challenge(route, request, input)
+      if (refused) return refused
       const found = await users.byEmail(email)
       const checked = await passwords.check(email, found?.id ?? null, input.password)
       if (!checked.ok) {
@@ -43,6 +45,8 @@ export function passwordRoutes(app) {
       if (problem) return json({ error: problem, code: 'weak-password' }, 400)
       const wait = await limits.check('password/signup', request)
       if (wait) return json({ error: `Please wait ${wait}s before trying again.`, code: 'slow-down', retryAfter: wait }, 429)
+      const refused = await challenge(route, request, input)
+      if (refused) return refused
       if (!(await users.allowed(email, { method: 'password' }))) return json({ error: "That email isn't on the list for this app.", code: 'not-allowed' }, 403)
       // Same answer whether or not they have an account, so this can't be used to find out.
       const sent = await app.sendSignInCode(email, url, input.redirect)

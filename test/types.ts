@@ -7,6 +7,7 @@ import { postgres } from 'slauthjs/stores/postgres'
 import { libsql } from 'slauthjs/stores/libsql'
 import { createClient as createLibsql } from '@libsql/client'
 import { resend } from 'slauthjs/email/resend'
+import { turnstile, hcaptcha } from 'slauthjs/challenge'
 import { cloudflareEmail } from 'slauthjs/email/cloudflare'
 import { consoleEmail } from 'slauthjs/email/console'
 import { createClient, SlauthError } from 'slauthjs/client'
@@ -27,6 +28,9 @@ const auth = slauth({
   lock: { default: 'weekly' },
 })
 slauth({ secret: 'x'.repeat(32), store: memory(), email: consoleEmail() })
+slauth({ secret: 'x'.repeat(32), store: memory(), challenge: turnstile({ secret: 's', hostname: 'app.dev' }) })
+slauth({ secret: 'x'.repeat(32), store: memory(), challenge: hcaptcha({ secret: 's' }) })
+slauth({ secret: 'x'.repeat(32), store: memory(), challenge: async (_request, token, { route }) => token === 'ok' && route !== 'password/signin' })
 slauth({ secret: 'x'.repeat(32), store: kv(env.KV), email: cloudflareEmail(env.EMAIL, { from: 'hi@app.dev' }), access: { team: 't', aud: 'a' } })
 slauth({ secret: 'x'.repeat(32), store: sqlite(db), lock: true, passkeys: false })
 slauth({ secret: 'x'.repeat(32), store: postgres(pool) })
@@ -42,7 +46,7 @@ export async function handler(request: Request): Promise<Response> {
 }
 
 const client = createClient()
-client.email.start('me@example.com').catch((e: unknown) => e instanceof SlauthError && e.code)
+client.email.start('me@example.com', { challenge: 'token' }).catch((e: unknown) => e instanceof SlauthError && e.code)
 client.passkey.supported()
 document.createElement('slauth-sign-in')
 toNodeHandler(auth)

@@ -19,13 +19,16 @@ export interface ClientConfig {
   twoFactor: boolean
   organizations: boolean
   providers: { id: string; name: string }[]
+  /** True when the server wants a bot-check token on sign-in. */
+  challenge: boolean
 }
 
 export interface SlauthClient {
   session(): Promise<{ user: SlauthUser | null; twoFactor?: 'pending'; impersonatorId?: string; lock?: { policy: Policy; required: boolean; pinSet: boolean; unlocked: boolean } }>
   config(): Promise<ClientConfig>
   email: {
-    start(email: string, options?: { redirect?: string }): Promise<{ ok: true }>
+    /** `challenge`: the token from a Turnstile or hCaptcha widget, when the app has `challenge` on. */
+    start(email: string, options?: { redirect?: string; challenge?: string }): Promise<{ ok: true }>
     verify(email: string, code: string): Promise<SignInResult>
     link(token: string): Promise<SignInResult & { redirect: string }>
     change: {
@@ -34,8 +37,8 @@ export interface SlauthClient {
     }
   }
   password: {
-    signIn(email: string, password: string): Promise<SignInResult>
-    signUp(email: string, password: string, options?: { redirect?: string }): Promise<{ ok: true; verify: 'email' }>
+    signIn(email: string, password: string, options?: { challenge?: string }): Promise<SignInResult>
+    signUp(email: string, password: string, options?: { redirect?: string; challenge?: string }): Promise<{ ok: true; verify: 'email' }>
     set(password: string, current?: string): Promise<{ ok: true }>
     remove(): Promise<{ ok: true }>
   }
