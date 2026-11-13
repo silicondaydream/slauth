@@ -1,4 +1,4 @@
-import type { OrgRole, Policy, SlauthUser } from './index.js'
+import type { ActiveOrg, OrgRole, Policy, SlauthUser } from './index.js'
 
 export class SlauthError extends Error {
   /** e.g. "bad-code", "expired", "not-allowed", "slow-down", "signed-out", "reauth-required", "offline". */
@@ -24,7 +24,7 @@ export interface ClientConfig {
 }
 
 export interface SlauthClient {
-  session(): Promise<{ user: SlauthUser | null; twoFactor?: 'pending'; impersonatorId?: string; lock?: { policy: Policy; required: boolean; pinSet: boolean; unlocked: boolean } }>
+  session(): Promise<{ user: SlauthUser | null; twoFactor?: 'pending'; impersonatorId?: string; /** With organizations on: the session's active organization. */ org?: ActiveOrg | null; lock?: { policy: Policy; required: boolean; pinSet: boolean; unlocked: boolean } }>
   config(): Promise<ClientConfig>
   email: {
     /** `challenge`: the token from a Turnstile or hCaptcha widget, when the app has `challenge` on. */
@@ -81,6 +81,8 @@ export interface SlauthClient {
   getToken(): Promise<string>
   orgs: {
     list(): Promise<{ orgs: { id: string; name: string; role: OrgRole; metadata: Record<string, unknown>; createdAt: number }[] }>
+    /** Works in this organization for the rest of the session; null for none. JWTs then carry org_id and org_role. */
+    setActive(id: string | null): Promise<{ org: ActiveOrg | null }>
     create(name: string): Promise<{ org: { id: string; name: string; role: 'owner' } }>
     get(id: string): Promise<{
       org: { id: string; name: string; metadata: Record<string, unknown>; createdAt: number }

@@ -20,6 +20,7 @@ export function accountRoutes(app) {
       }
       const out = { user: me ? publicUser(me.user) : null }
       if (me?.session?.impersonatorId) out.impersonatorId = me.session.impersonatorId
+      if (me && app.orgs) out.org = await app.activeOrg(me)
       if (!me && app.twoFactor && (await app.pending(request))) out.twoFactor = 'pending'
       if (lock && me) out.lock = (await lock.handle('session', 'GET', body, { email: me.user.email, userId: me.user.id }, request.headers.get('cookie'), url.protocol === 'https:')).body
       return json(out, 200, headers)
@@ -59,7 +60,8 @@ export function accountRoutes(app) {
     const { user, session } = me
 
     if (route === 'token' && method === 'GET' && tokens) {
-      return json(await tokens.create(publicUser(user)))
+      const org = await app.activeOrg(me)
+      return json(await tokens.create(publicUser(user), org ? { org_id: org.id, org_role: org.role } : {}))
     }
 
     if (route === 'sessions' && method === 'GET') {

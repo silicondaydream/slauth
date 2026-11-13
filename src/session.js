@@ -8,7 +8,7 @@ const DAY = 24 * 60 * 60
  * leaked database can't be used to sign in. Sessions slide: each day someone uses the
  * app, the 30 days start again.
  *
- *   session:<id>      { userId, createdAt, refreshedAt, method, userAgent, ip, impersonatorId }
+ *   session:<id>      { userId, createdAt, refreshedAt, method, userAgent, ip, impersonatorId, orgId? }
  *   sessions:<userId> -> [id, ...]   (so people can see and end their other sessions)
  *
  * The id is the hash, which is safe to show: it can't be turned back into the token.
@@ -80,6 +80,15 @@ export function createSessions({ store, cookie, days }) {
         if (!ids.includes(id)) await store.put(`sessions:${session.userId}`, [...ids.slice(-49), id])
       }
       return { ...session, id, token }
+    },
+
+    /** Changes a session's own fields (like the active organization), keeping its expiry. */
+    async update(session, patch) {
+      const { token, id, ...value } = session
+      const left = Math.ceil((value.refreshedAt + ttl * 1000 - Date.now()) / 1000)
+      if (left <= 0) return false
+      await store.put(`session:${id}`, { ...value, ...patch }, { ttl: left })
+      return true
     },
 
     /** Restarts the 30 days at most once a day; returns a Set-Cookie value when it did. */

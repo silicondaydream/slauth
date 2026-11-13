@@ -158,6 +158,13 @@ export function createClient({ basePath = '/auth', fetch: doFetch = (...args) =>
     },
     orgs: {
       list: () => call('orgs'),
+      /** Works in this organization for the rest of the session (null for none). Returns { org }. */
+      async setActive(id) {
+        const out = await call('orgs/active', { orgId: id })
+        // A cached JWT still names the old organization.
+        cachedToken = null
+        return out
+      },
       create: (name) => call('orgs', { name }),
       get: (id) => call(`orgs/${encodeURIComponent(id)}`),
       rename: (id, name) => call(`orgs/${encodeURIComponent(id)}`, { name }),

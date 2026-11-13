@@ -46,7 +46,17 @@ export async function handler(request: Request): Promise<Response> {
   return Response.json(me)
 }
 
+export async function orgRoute(request: Request): Promise<Response> {
+  const member = await auth.orgs!.require(request, { role: ['owner', 'admin'] })
+  if (member instanceof Response) return member
+  const where: string = member.orgId
+  const session = await auth.session(request)
+  return Response.json({ where, active: session?.org?.role })
+}
+
 const client = createClient()
+client.orgs.setActive('org_123').then(({ org }) => org?.name)
+client.orgs.setActive(null)
 client.email.start('me@example.com', { challenge: 'token' }).catch((e: unknown) => e instanceof SlauthError && e.code)
 client.passkey.supported()
 document.createElement('slauth-sign-in')

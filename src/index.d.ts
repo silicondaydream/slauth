@@ -183,6 +183,13 @@ export interface Org {
   createdBy: string | null
 }
 
+/** The organization a session is working in (POST /auth/orgs/active). */
+export interface ActiveOrg {
+  id: string
+  name: string
+  role: OrgRole
+}
+
 export interface OrgMember {
   userId: string
   role: OrgRole
@@ -201,6 +208,9 @@ export interface OrgInvite {
 
 export interface TokenClaims extends Record<string, unknown> {
   sub: string
+  /** With an active organization. */
+  org_id?: string
+  org_role?: OrgRole
   email: string
   name: string | null
   roles: string[]
@@ -216,7 +226,8 @@ export interface Slauth {
   /** The signed-in, unlocked person (with one of these roles), or a 401/403 Response to return as it is. */
   requireUser(request: Request, options?: { role?: string | string[] }): Promise<SlauthUser | Response>
   /** The user and their session (null for Access or a JWT), or null. */
-  session(request: Request): Promise<{ user: SlauthUser; session: { id: string; userId: string; createdAt: number; method: string | null; impersonatorId: string | null } | null } | null>
+  /** `org` is the active organization (null when none is chosen, or organizations are off). */
+  session(request: Request): Promise<{ user: SlauthUser; session: { id: string; userId: string; createdAt: number; method: string | null; impersonatorId: string | null } | null; org: ActiveOrg | null } | null>
   store: Store
 
   users: {
@@ -275,7 +286,9 @@ export interface Slauth {
     invite(orgId: string, email: string, role?: OrgRole, invitedBy?: string | null): Promise<OrgInvite>
     revokeInvite(inviteId: string): Promise<boolean>
     /** The signed-in member (with one of these org roles), or a 401/403 Response to return as it is. */
-    require(request: Request, orgId: string, options?: { role?: OrgRole | OrgRole[] }): Promise<(SlauthUser & { orgRole: OrgRole }) | Response>
+    require(request: Request, orgId: string, options?: { role?: OrgRole | OrgRole[] }): Promise<(SlauthUser & { orgId: string; orgRole: OrgRole }) | Response>
+    /** The same, for the session's active organization (403 no-active-org when there isn't one). */
+    require(request: Request, options?: { role?: OrgRole | OrgRole[] }): Promise<(SlauthUser & { orgId: string; orgRole: OrgRole }) | Response>
   }
 
   /** Needs `tokens` on. */
