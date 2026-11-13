@@ -1,0 +1,6 @@
+# pnpm settings for the library. (No `packages`: the examples install on their own.)
+
+# Supply-chain hygiene (see CODE_POLICY.md §9): don't install a version published in the
+# last 3 days, so a hijacked release has time to be caught and pulled first. In minutes.
+# It lives here rather than in .npmrc, where npm (used only to publish) warns about it.
+minimumReleaseAge: 4320

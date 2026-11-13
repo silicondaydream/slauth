@@ -8,7 +8,10 @@ which publishes to npm and makes the GitHub Release.
 ```
 PR merged to main ──► (release day) release PR bumps version + CHANGELOG ──► tag vX.Y.Z
                                                                               │
-                     npm: slauthjs@X.Y.Z (with provenance) ◄── Release workflow ──► GitHub Release
+                     npm: staged slauthjs@X.Y.Z ◄── Release workflow ──► draft GitHub Release
+                              │ npm stage approve (2FA)                       │ publish the draft
+                              ▼                                               ▼
+                     npm: slauthjs@X.Y.Z (with provenance)              GitHub Release
 ```
 
 ## The schedule
@@ -52,9 +55,18 @@ All with pnpm, from an up-to-date `main`:
    ```
 
 7. Approve the `npm` environment when GitHub asks (Actions → the Release run). It
-   publishes, then creates the GitHub Release from the CHANGELOG notes.
-8. Check: `pnpm view slauthjs version` shows 2.1.0, and the npm page shows the provenance badge.
-9. Add a fresh `## Unreleased` heading to `CHANGELOG.md` with the next feature PR.
+   stages the version on npm, then drafts the GitHub Release from the CHANGELOG notes.
+8. Ship it on npm, with your 2FA code (or approve it on npmjs.com under the package's
+   staged versions):
+
+   ```sh
+   npm stage list slauthjs        # shows the stage id
+   npm stage approve <stage-id>
+   ```
+
+9. Publish the draft GitHub Release (Releases → the draft → Publish release).
+10. Check: `pnpm view slauthjs version` shows 2.1.0, and the npm page shows the provenance badge.
+11. Add a fresh `## Unreleased` heading to `CHANGELOG.md` with the next feature PR.
 
 For a release candidate, the same with `pnpm version preminor --preid rc --no-git-tag-version`
 (gives `2.1.0-rc.0`) and tag `v2.1.0-rc.0`; it lands on npm's `next` tag, not `latest`.
@@ -82,7 +94,10 @@ These are settings, not code, so they live here as a checklist.
 
 - [ ] Two-factor auth on the account (Account → Two-Factor Authentication, "Authorization and publishing").
 - [ ] slauthjs → Settings → **Trusted Publisher** → GitHub Actions: owner `silicondaydream`,
-      repository `slauth`, workflow `release.yml`, environment `npm`.
+      repository `slauth`, workflow `release.yml`, environment `npm`. Leave it
+      **stage-only** (the default; "Allow npm publish" unticked): CI stages, a person
+      approves. A direct `npm publish` from CI then fails with 403 "OIDC permission denied".
+      A new entry expires if nothing is staged or published through it within 2 days.
 - [ ] slauthjs → Settings → **Publishing access**: "Require two-factor authentication and disallow tokens".
 - [ ] Account → Access Tokens: delete any old publish tokens.
 
@@ -111,7 +126,9 @@ These are settings, not code, so they live here as a checklist.
 git tag v2.0.0 986f55c && git push origin v2.0.0
 ```
 
-That commit has the older release workflow, so create the 2.0.0 GitHub Release by hand
+That commit has the older release workflow, which runs `npm publish` rather than
+staging, so for this one release tick "Allow npm publish" on the trusted publisher,
+re-run the failed job, then untick it again. Create the 2.0.0 GitHub Release by hand
 (Releases → Draft a new release → tag v2.0.0 → paste the 2.0.0 CHANGELOG section).
 From 2.1.0 on, the workflow does it.
 
