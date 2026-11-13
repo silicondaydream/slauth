@@ -38,11 +38,24 @@ Everything else, including ordinary bug fixes, waits for the next minor. Because
 features are off by default (CODE_POLICY §1), unreleased code on `main` never changes
 anything for anyone until they upgrade and turn it on.
 
+## Day to day: merging isn't releasing
+
+- **Merging a PR never publishes anything.** It lands on `main` and waits for the next
+  release day. Only a pushed `v*` tag starts a release, and only a maintainer's npm 2FA
+  ships it.
+- **You can't approve your own PR** on GitHub, so while there's one maintainer the `main`
+  ruleset requires 0 approvals: read the diff, wait for green checks, **Squash and merge**.
+- **Dependabot:** merge dev-dependency and Actions updates (minor and patch) whenever
+  they're green; they never need a release. Look at **major** bumps (TypeScript, Vitest)
+  on their own before merging, and close PRs for folders that no longer exist.
+- **Docs** live in the private slauth-site repository. Its PR for a feature can merge
+  once the library PR has; the live site may then describe it a little before it ships.
+
 ## Cutting a minor release (release day)
 
 All with pnpm, from an up-to-date `main`:
 
-1. Branch: `git switch -c release/2.1.0`
+1. Branch: `git switch -c prepare-2.1.0` (not `release/…`: that name is for patch lines)
 2. Bump without tagging: `pnpm version minor --no-git-tag-version`
 3. In `CHANGELOG.md`, rename `## Unreleased` to `## 2.1.0`, and read it through as a user would.
 4. `pnpm release:check` (tests, types, the smoke test, the package contents and the notes).
@@ -119,17 +132,26 @@ These are settings, not code, so they live here as a checklist.
 - [ ] Security: private vulnerability reporting, Dependabot alerts and security updates on;
       secret scanning and push protection on (free once public).
 
-**First release of 2.x:** 2.0.0 was never published. Tag the commit that's exactly 2.0.0
-(after the site moved out, before the 2.1 work) and push it; the Release workflow does the rest:
+**Done once, for the record:** 2.0.0 was published on 2026-11-13 from tag `v2.0.0`
+(commit `986f55c`). That commit's workflow still ran a direct `npm publish`, so "Allow npm
+publish" was ticked for that one run and unticked afterwards; its GitHub Release was made
+by hand, and `0.0.0-stage` was deprecated.
 
-```sh
-git tag v2.0.0 986f55c && git push origin v2.0.0
-```
+## When something goes wrong
 
-That commit has the older release workflow, which runs `npm publish` rather than
-staging, so for this one release tick "Allow npm publish" on the trusted publisher,
-re-run the failed job, then untick it again. Create the 2.0.0 GitHub Release by hand
-(Releases → Draft a new release → tag v2.0.0 → paste the 2.0.0 CHANGELOG section).
-From 2.1.0 on, the workflow does it.
+npm answers "not allowed" with a 404 on purpose (so it doesn't reveal which packages
+exist), which makes its errors look stranger than they are:
 
-Also: `npm deprecate slauthjs@0.0.0-stage "Not a real release; use slauthjs@latest."`
+| You see | It means | Fix |
+|---|---|---|
+| CI: `404 Not Found - PUT https://registry.npmjs.org/slauthjs`, after "Signed provenance statement" | npm didn't accept the run as a trusted publisher, so it used no real credentials | Check the Trusted Publisher: `silicondaydream` / `slauth` / `release.yml` / `npm`, spelled exactly. Then **Re-run failed jobs**; no new tag needed |
+| CI: `403 … OIDC permission denied for this action` | The run tried `npm publish`, but the trusted publisher is stage-only | The workflow should run `npm stage publish`. If it's an old tag that doesn't, tick "Allow npm publish" for one re-run, then untick it |
+| Your laptop: `404 … is not in this registry` on `npm deprecate`, `npm stage approve` and the like | You're not logged in as a maintainer (`chrisadams.io`), or the saved login is an old token npm no longer accepts | `npm whoami`, then `npm logout` and `npm login` (browser + 2FA), and run it again |
+| `pnpm view slauthjs version` still shows the old version right after a release | npm's cache | Wait a minute, or check `https://registry.npmjs.org/slauthjs` directly |
+| The Release run stops at "The tag is on main or a release branch" | The tag points at a commit that isn't on `main` or `release/*` | Delete the tag (`git push origin :refs/tags/vX.Y.Z`), tag the merge commit on `main`, push again |
+| The Release run stops at "CHANGELOG.md has notes" | No `## X.Y.Z` section | Fix CHANGELOG.md in a PR, then delete and re-push the tag on the new merge commit |
+
+A version number can only ever be published once on npm, even if it's deprecated or
+unpublished later. If a staged version turns out wrong, `npm stage reject <id>` and fix
+it before approving; if a bad version did ship, release the next patch rather than
+reusing the number.
