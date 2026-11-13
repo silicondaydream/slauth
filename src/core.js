@@ -159,6 +159,18 @@ export function slauth(config) {
     return found
   }
 
+  /**
+   * The organization this session (or JWT) is working in, if it's still a member:
+   * { id, name, role }, or null. Removal or deletion makes it null without touching sessions.
+   */
+  async function activeOrg(found) {
+    const orgId = found?.session?.orgId ?? found?.claims?.org_id
+    if (!orgs || typeof orgId !== 'string') return null
+    const role = await orgs.role(orgId, found.user.id)
+    const org = role && (await orgs.get(orgId))
+    return org ? { id: org.id, name: org.name, role } : null
+  }
+
   /* ---------- the end of every sign-in ---------- */
 
   async function emit(name, data) {
@@ -239,6 +251,7 @@ export function slauth(config) {
     passkeys,
     origins,
     current,
+    activeOrg,
     complete,
     reply,
     pending,
@@ -339,7 +352,12 @@ export function slauth(config) {
       const found = await current(request, { jwt: true })
       if (!found) return null
       const s = found.session
-      return { user: publicUser(found.user), session: s ? { id: s.id, userId: s.userId, createdAt: s.createdAt, method: s.method ?? null, impersonatorId: s.impersonatorId ?? null } : null }
+      const org = await activeOrg(found)
+      return {
+        user: publicUser(found.user),
+        session: s ? { id: s.id, userId: s.userId, createdAt: s.createdAt, method: s.method ?? null, impersonatorId: s.impersonatorId ?? null } : null,
+        org,
+      }
     },
     store,
 
@@ -409,14 +427,20 @@ export function slauth(config) {
       revokeInvite: orgs.revokeInvite,
       /**
        * The signed-in person if they belong to this org (with one of these roles), else a
-       * 401/403 Response to return as it is.
+       * 401/403 Response to return as it is. Without an orgId, the session's active org.
        */
       async require(request, orgId, { role } = {}) {
+        if (orgId && typeof orgId === 'object') [orgId, { role } = {}] = [undefined, orgId]
         const found = await requireUser(request)
         if (found instanceof Response) return found
+        if (!orgId) {
+          const active = await activeOrg(await current(request, { jwt: true }))
+          if (!active) return json({ error: 'Choose an organization first.', code: 'no-active-org' }, 403)
+          orgId = active.id
+        }
         const theirs = await orgs.role(orgId, found.id)
         if (!theirs || (role && ![role].flat().includes(theirs))) return json({ error: "You don't have access to that.", code: 'forbidden' }, 403)
-        return { ...found, orgRole: theirs }
+        return { ...found, orgId, orgRole: theirs }
       },
     },
 

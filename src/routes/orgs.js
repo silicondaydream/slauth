@@ -15,6 +15,7 @@ const ROLE = /^[a-z0-9_-]{1,40}$/i
  *   POST orgs/<id>/invites/revoke   { id }        (owner, admin)
  *   POST orgs/<id>/members/role     { userId, role }   (owner, admin; only owners make owners)
  *   POST orgs/<id>/members/remove   { userId }   (owner, admin, or yourself to leave)
+ *   POST orgs/active           { orgId }   work in this org (null: none) for this session
  *   GET  invites                           → { invites }   addressed to my email
  *   POST invites/accept        { id }
  *   POST invites/decline       { id }
@@ -42,6 +43,14 @@ export function orgRoutes(app) {
       if (typeof name !== 'string' || !name.trim()) return json({ error: 'Give it a name.', code: 'bad-request' }, 400)
       const org = await orgs.create({ name }, user.id)
       return json({ org: { ...org, role: 'owner' } })
+    }
+
+    if (route === 'orgs/active' && method === 'POST') {
+      const { orgId } = await body()
+      if (!me.session) return json({ error: 'Only a signed-in session has an active organization.', code: 'bad-request' }, 400)
+      if (orgId !== null && (typeof orgId !== 'string' || !(await orgs.role(orgId, user.id)))) return notFound()
+      await app.sessions.update(me.session, { orgId })
+      return json({ org: await app.activeOrg({ ...me, session: { ...me.session, orgId } }) })
     }
 
     if (route === 'invites' && method === 'GET') {

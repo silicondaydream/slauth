@@ -22,6 +22,12 @@
   `{ accountPage: '/account' }` to link to the device list. New email kind `new-sign-in`
   (your `emails()` and sender get `device`, `method` and `when`), new storage key
   `devices:<userId>`.
+- **Active organization** (with `organizations` on): `POST /auth/orgs/active { orgId }`
+  (or `client.orgs.setActive(id)`) picks the organization a session works in.
+  `GET /auth/session` and `auth.session()` return it as `org: { id, name, role }`, JWTs
+  carry `org_id` and `org_role`, and `auth.orgs.require(request)` without an id checks
+  the active one (new error code `no-active-org`). Membership is checked every time, so
+  removing someone or deleting the org takes effect at once.
 - **libSQL store** (`slauthjs/stores/libsql`): Turso and other libSQL databases through
   `@libsql/client`.
 

@@ -98,6 +98,80 @@ describe('organizations', () => {
     expect(denied.status).toBe(403)
   })
 
+  describe('active organization', () => {
+    it('is chosen per session, shows in /session and auth.session(), and can be cleared', async () => {
+      const ctx = await team()
+      expect((await ctx.owner.call('GET', '/auth/session')).body.org).toBeNull()
+      const set = await ctx.owner.call('POST', '/auth/orgs/active', { orgId: ctx.org.id })
+      expect(set.body.org).toEqual({ id: ctx.org.id, name: 'Sloth Co', role: 'owner' })
+      expect((await ctx.owner.call('GET', '/auth/session')).body.org).toEqual({ id: ctx.org.id, name: 'Sloth Co', role: 'owner' })
+      expect((await ctx.auth.session(ctx.owner.request('GET', '/x'))).org).toMatchObject({ id: ctx.org.id, role: 'owner' })
+      // Another browser for the same person isn't affected.
+      const other = ctx.browser()
+      await signIn(other, ctx.mailbox, 'owner@example.com')
+      expect((await other.call('GET', '/auth/session')).body.org).toBeNull()
+      expect((await ctx.owner.call('POST', '/auth/orgs/active', { orgId: null })).body.org).toBeNull()
+      expect((await ctx.owner.call('GET', '/auth/session')).body.org).toBeNull()
+    })
+
+    it("can't be an org you're not in, or a made-up id", async () => {
+      const ctx = await team()
+      const outsider = ctx.browser()
+      await signIn(outsider, ctx.mailbox, 'out@example.com')
+      for (const orgId of [ctx.org.id, 'org_nope', 42, {}]) {
+        expect((await outsider.call('POST', '/auth/orgs/active', { orgId })).status).toBe(404)
+      }
+      expect((await outsider.call('GET', '/auth/session')).body.org).toBeNull()
+    })
+
+    it('stops counting once the member is removed or the org is deleted', async () => {
+      const ctx = await team()
+      const member = await join(ctx, 'm@example.com')
+      await member.b.call('POST', '/auth/orgs/active', { orgId: ctx.org.id })
+      expect((await member.b.call('GET', '/auth/session')).body.org.role).toBe('member')
+      await ctx.owner.call('POST', `/auth/orgs/${ctx.org.id}/members/remove`, { userId: member.user.id })
+      expect((await member.b.call('GET', '/auth/session')).body.org).toBeNull()
+      expect((await ctx.auth.orgs.require(member.b.request('GET', '/x'))).status).toBe(403)
+
+      await ctx.owner.call('POST', '/auth/orgs/active', { orgId: ctx.org.id })
+      await ctx.owner.call('POST', `/auth/orgs/${ctx.org.id}/delete`, {})
+      expect((await ctx.owner.call('GET', '/auth/session')).body.org).toBeNull()
+    })
+
+    it('keeps the session expiry when it changes', async () => {
+      const ctx = await team()
+      vi.setSystemTime(Date.now() + 5 * 24 * 3600_000)
+      await ctx.owner.call('POST', '/auth/orgs/active', { orgId: ctx.org.id })
+      // 26 days later the session (started 31 days ago, never refreshed) has ended.
+      vi.setSystemTime(Date.now() + 26 * 24 * 3600_000)
+      expect((await ctx.owner.call('GET', '/auth/session')).body.user).toBeNull()
+    })
+
+    it('puts org_id and org_role in JWTs, and orgs.require uses it with no id', async () => {
+      const tokens = setup({ organizations: true, tokens: true })
+      const b = tokens.browser()
+      await signIn(b, tokens.mailbox, 'me@example.com')
+      const org = (await b.call('POST', '/auth/orgs', { name: 'JWT Co' })).body.org
+      expect((await tokens.auth.verifyToken((await b.call('GET', '/auth/token')).body.token)).org_id).toBeUndefined()
+      const none = await tokens.auth.orgs.require(b.request('GET', '/x'))
+      expect(none.status).toBe(403)
+      expect((await none.json()).code).toBe('no-active-org')
+
+      await b.call('POST', '/auth/orgs/active', { orgId: org.id })
+      const { token } = (await b.call('GET', '/auth/token')).body
+      expect(await tokens.auth.verifyToken(token)).toMatchObject({ org_id: org.id, org_role: 'owner' })
+      expect(await tokens.auth.orgs.require(b.request('GET', '/x'))).toMatchObject({ email: 'me@example.com', orgId: org.id, orgRole: 'owner' })
+      expect((await tokens.auth.orgs.require(b.request('GET', '/x'), { role: 'admin' })).status).toBe(403)
+
+      // A JWT on its own (another service) gets the same answer, checked against membership now.
+      const bearer = new Request('https://app.example/x', { headers: { authorization: `Bearer ${token}` } })
+      expect(await tokens.auth.orgs.require(bearer)).toMatchObject({ orgId: org.id, orgRole: 'owner' })
+      expect((await tokens.auth.session(bearer)).org).toMatchObject({ id: org.id })
+      await tokens.auth.orgs.delete(org.id)
+      expect((await tokens.auth.orgs.require(bearer)).status).toBe(403)
+    })
+  })
+
   it('deleting the owner hands the org on', async () => {
     const ctx = await team()
     const member = await join(ctx, 'm@example.com')
