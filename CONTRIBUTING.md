@@ -35,15 +35,14 @@ docs land as two PRs. Say in yours which options, routes, error codes or storage
 changed and a maintainer will update the docs before the release. Docs mistakes are
 welcome as issues here.
 
-## Publishing to npm
+## Releases
 
-1. The package is published as **`slauthjs`** (`slauth` was taken on npm). The library
-   and the site are still called slauth.
-2. Bump `version` in `package.json`, add a CHANGELOG entry, and merge that to `main`.
-3. Tag it: `git tag v2.0.1 && git push origin v2.0.1`. The
-   [Release workflow](.github/workflows/release.yml) checks the tag matches the version,
-   runs everything again, and publishes with npm trusted publishing after a reviewer
-   approves the `npm` environment. Nobody publishes from a laptop.
+slauth ships a minor release on the first Tuesday of each month, and patches only for
+security fixes and serious regressions. [RELEASING.md](RELEASING.md) has the schedule and
+the steps; publishing is done by CI from a version tag, never by hand. The package is
+**`slauthjs`** on npm (`slauth` was taken); the library and the site are still called slauth.
+
+When you open a PR, add a line under `## Unreleased` in `CHANGELOG.md`.
 
 ## CI
 

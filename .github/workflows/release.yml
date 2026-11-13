@@ -1,14 +1,15 @@
 name: Release
 
-# Publishing happens here and only here: push a tag like v2.0.1 that matches
-# package.json's version. It runs the checks again, then publishes with npm's trusted
-# publishing (OIDC), so there's no npm token stored anywhere.
+# Publishing happens here and only here: push a tag like v2.1.0 that matches
+# package.json's version. See RELEASING.md for when and how. It checks the tag is on
+# main (or a release/* branch, for fixes to an older line), that CHANGELOG.md has notes
+# for it, runs everything again, publishes with npm's trusted publishing (OIDC, so no
+# npm token is stored anywhere), then makes the GitHub Release from the same notes.
 #
-# One-time setup:
-#   1. npmjs.com → slauthjs → Settings → Trusted publishing: add this repository and
-#      the workflow file name "release.yml", environment "npm".
-#   2. GitHub → Settings → Environments → "npm": require a reviewer, and allow only
-#      tags matching v* to deploy.
+# Pre-releases (v2.1.0-rc.1) go to npm's "next" tag, so `npm install slauthjs` never
+# picks them up.
+#
+# One-time setup: RELEASING.md, "One-time setup".
 
 on:
   push:
@@ -33,6 +34,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # to check which branch the tag is on
+      - name: The tag is on main or a release branch
+        run: |
+          if ! git branch -r --contains "$GITHUB_SHA" | grep -qE '^\s*origin/(main|release/.+)$'; then
+            echo "Tags are released only from main or release/* (RELEASING.md)."; exit 1
+          fi
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -47,12 +54,41 @@ jobs:
         run: |
           version="v$(node -p "require('./package.json').version")"
           if [ "$TAG" != "$version" ]; then echo "Tag $TAG doesn't match package.json ($version)"; exit 1; fi
+      - name: CHANGELOG.md has notes for this version
+        run: node scripts/release-notes.mjs
       - run: pnpm test
       - run: pnpm typecheck
       - run: node test/smoke.mjs
+      # npm, not pnpm, for this one step: trusted publishing (OIDC) is an npm CLI feature
+      # (npm 11.5+, which Node 24 ships). Everything else uses pnpm.
       - name: Publish
         env:
           PRIVATE: ${{ github.event.repository.private }}
+          TAG: ${{ github.ref_name }}
         run: |
+          channel=latest
+          case "$TAG" in *-*) channel=next ;; esac
           # npm can only attest provenance for public repositories.
-          if [ "$PRIVATE" = "true" ]; then npm publish; else npm publish --provenance; fi
+          if [ "$PRIVATE" = "true" ]; then npm publish --tag "$channel"; else npm publish --provenance --tag "$channel"; fi
+
+  github-release:
+    name: GitHub Release
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write # to create the release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Create the release from the CHANGELOG notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          prerelease=""
+          case "$TAG" in *-*) prerelease="--prerelease" ;; esac
+          node scripts/release-notes.mjs > "$RUNNER_TEMP/notes.md"
+          gh release create "$TAG" --repo "$REPO" --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag $prerelease

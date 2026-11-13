@@ -1,4 +1,6 @@
-# Keeps the pinned action SHAs and dev dependencies current. New releases wait a week
+# Keeps the pinned action SHAs and dev dependencies current. None of these change the
+# published package (it has no dependencies), so they merge any time and never need a
+# release of their own (RELEASING.md). New releases wait a week
 # (cooldown) so a compromised version has time to be noticed and pulled first.
 version: 2
 updates:
@@ -22,6 +24,10 @@ updates:
       dev:
         patterns: ['*']
         update-types: [minor, patch]
+    ignore:
+      # Types for the oldest Node we support, not the newest (engines: node >= 20).
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: npm
     directories: [/examples/workers-d1, /examples/node-express]

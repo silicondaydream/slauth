@@ -88,7 +88,8 @@
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
     "prepublishOnly": "vitest run && tsc -p tsconfig.json",
-    "smoke": "node test/smoke.mjs"
+    "smoke": "node test/smoke.mjs",
+    "release:check": "vitest run && tsc -p tsconfig.json && node test/smoke.mjs && node scripts/release-notes.mjs > /dev/null && npm pack --dry-run"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.15",
