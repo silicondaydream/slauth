@@ -1,0 +1,22 @@
+name: Bug
+description: Something in slauth doesn't work as the docs say.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "**Found a security problem?** Please don't file it here: report it privately (see SECURITY.md)."
+  - type: input
+    id: version
+    attributes: { label: slauthjs version, placeholder: "2.1.0" }
+    validations: { required: true }
+  - type: input
+    id: runtime
+    attributes: { label: Runtime and store, placeholder: "Workers + D1, Node 22 + sqlite, …" }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes: { label: What happened, and what you expected }
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes: { label: How to reproduce it, description: "The config (without secrets) and the requests. A failing test against auth.handle() is perfect." }

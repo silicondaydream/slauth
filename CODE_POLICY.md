@@ -116,6 +116,10 @@ Vulnerabilities are reported privately: see [SECURITY.md](SECURITY.md).
 
 - Releases are **published by CI from a version tag**, never from a laptop, with npm
   provenance where the repository allows it. See `.github/workflows/release.yml`.
+- Releases follow **the schedule in [RELEASING.md](RELEASING.md)**: a minor on the first
+  Tuesday of each month; off-schedule patches only for security fixes, serious
+  regressions, or a shipped dependency that must change. Dev-dependency and Actions
+  updates never need a release.
 - CI actions are **pinned to full commit SHAs**, workflows get **least-privilege
   `permissions`**, and Dependabot keeps both pins and dev dependencies current.
 - No long-lived npm tokens: publishing uses npm's trusted publishing (OIDC).

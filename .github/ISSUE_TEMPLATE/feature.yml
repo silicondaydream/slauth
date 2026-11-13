@@ -1,0 +1,11 @@
+name: Feature idea
+description: Something slauth should do.
+labels: [idea]
+body:
+  - type: textarea
+    id: problem
+    attributes: { label: The problem, description: "What are you trying to do, and what gets in the way?" }
+    validations: { required: true }
+  - type: textarea
+    id: idea
+    attributes: { label: What you'd like, description: "Bear in mind: one config key, off by default, no dependencies (CODE_POLICY.md)." }

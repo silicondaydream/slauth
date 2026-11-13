@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a vulnerability (privately)
+    url: https://github.com/silicondaydream/slauth/security/advisories/new
+    about: Please don't open a public issue for security problems.
+  - name: Docs
+    url: https://slauth.dev/docs/
+    about: How to set slauth up. Spotted a mistake in them? A bug issue is fine.
