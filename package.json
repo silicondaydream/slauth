@@ -92,12 +92,12 @@
     "release:check": "vitest run && tsc -p tsconfig.json && node test/smoke.mjs && node scripts/release-notes.mjs > /dev/null && npm pack --dry-run"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.16",
+    "@electric-sql/pglite": "^0.5.17",
     "@libsql/client": "^0.18.0",
     "@types/node": "^22.20.5",
     "jsqr": "^1.4.0",
     "typescript": "^5.9.3",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
   "keywords": [
     "auth",
